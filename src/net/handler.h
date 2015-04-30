@@ -1,8 +1,10 @@
 #ifndef SIM_HANDLER_H_
 #define SIM_HANDLER_H_
 
+#include <queue>
 #include "link.h"
 #include "message.h"
+#include "../util/thread.h"
 
 namespace sim{
 
@@ -17,10 +19,8 @@ public:
 	Message msg;
 	Link *link;
 	Response(){
-		link = NULL;
 	}
 	~Response(){
-		delete link;
 	}
 };
 	
@@ -37,12 +37,13 @@ public:
 	virtual HandlerState close(Link *link);
 	virtual HandlerState proc(Link *link, const Message &msg);
 	
-	// 当有响应需要发送给某个客户端时, 返回响应的指针. 调用者负责释放.
 	virtual Response* handle();
 
 protected:
-	void push_response();
-	Response* pop_response();
+	void push_response(Response *resp);
+
+private:
+	SelectableQueue<Response *> resps;
 };
 
 }; // namespace sim

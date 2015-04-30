@@ -25,7 +25,6 @@ private:
 	Fdevents *fdes;
 	Link *serv_link;
 	int link_count;
-	std::map<int, Link*> links;
 	std::vector<Handler*> handlers;
 
 	Link* accept_link();

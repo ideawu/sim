@@ -15,15 +15,15 @@ HandlerState Handler::proc(Link *link, const Message &msg){
 }
 
 Response* Handler::handle(){
-	return this->pop_reponse();
-}
-
-void Handler::push_response(){
-	//
-}
-
-Response* Handler::pop_response(){
+	Response *resp;
+	if(this->resps.pop(&resp) == 1){
+		return resp;
+	}
 	return NULL;
+}
+
+void Handler::push_response(Response *resp){
+	this->resps.push(resp);
 }
 
 }; // namespace sim

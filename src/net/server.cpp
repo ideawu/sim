@@ -158,12 +158,7 @@ void Server::loop(){
 
 	while(1){
 		const Fdevents::events_t *events;
-		if(!this->links.empty()){
-			// ready_list not empty, so we should return immediately
-			events = fdes->wait(0);
-		}else{
-			events = fdes->wait(20);
-		}
+		events = fdes->wait(20);
 		if(events == NULL){
 			log_fatal("events.wait error: %s", strerror(errno));
 			break;
@@ -176,13 +171,17 @@ void Server::loop(){
 				link = this->accept_link();
 			}else if(fde->data.num == HANDLER_TYPE){
 				Handler *handler = (Handler *)fde->data.ptr;
-				/*
 				while(1){
-					resp = handler->read();
-					resp->link->send(resp->msg);
-					delete resp;
+					Response *resp = handler->handle();
+					if(resp){
+						Link *link = resp->link;
+						link->send(resp->msg);
+						if(link && !link->output.empty()){
+							fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, link);
+						}
+						delete resp;
+					}
 				}
-				*/
 			}else{
 				Link *link = (Link *)fde->data.ptr;
 				if(fde->events & FDEVENT_IN){
@@ -195,9 +194,9 @@ void Server::loop(){
 						continue;
 					}
 				}
-			}
-			if(link && !link->output.empty()){
-				fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, link);
+				if(link && !link->output.empty()){
+					fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, link);
+				}
 			}
 		}
 	}
