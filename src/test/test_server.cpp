@@ -6,13 +6,9 @@ class ThreadHandler : public sim::Handler
 {
 public:
 	ThreadHandler();
-	virtual sim::HandlerState accept(sim::Link *link);
-	virtual sim::HandlerState close(sim::Link *link);
 	virtual sim::HandlerState proc(const sim::Request &req, sim::Response *resp);
 private:
-	std::map<int, sim::Link *> links;
 	static void* _run_thread(void *arg);
-	Mutex mutex;
 };
 
 ThreadHandler::ThreadHandler(){
@@ -38,22 +34,10 @@ void* ThreadHandler::_run_thread(void *arg){
 			sim::Response *resp = new sim::Response();
 			resp->link = it->second;
 			resp->msg.add("timer");
-			handler->push_response(resp);
+			handler->async_send(resp);
 		}
 	}
 	return NULL;
-}
-
-sim::HandlerState ThreadHandler::accept(sim::Link *link){
-	Locking(&this->mutex);
-	links[link->fd()] = link;
-	return ok();
-}
-
-sim::HandlerState ThreadHandler::close(sim::Link *link){
-	Locking(&this->mutex);
-	links.erase(link->fd());
-	return ok();
 }
 
 sim::HandlerState ThreadHandler::proc(const sim::Request &req, sim::Response *resp){

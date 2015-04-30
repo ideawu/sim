@@ -69,7 +69,7 @@ Link* Server::accept_link(){
 	
 	for(int i=0; i<this->handlers.size(); i++){
 		Handler *handler = this->handlers[i];
-		HandlerState state = handler->accept(link);
+		HandlerState state = handler->on_accept(link);
 		if(state == HANDLE_FAIL){
 			delete link;
 			return NULL;
@@ -87,7 +87,7 @@ Link* Server::accept_link(){
 int Server::close_link(Link *link){
 	for(int i=0; i<this->handlers.size(); i++){
 		Handler *handler = this->handlers[i];
-		handler->close(link);
+		handler->on_close(link);
 	}
 	
 	this->link_count --;

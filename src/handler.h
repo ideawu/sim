@@ -2,6 +2,7 @@
 #define SIM_HANDLER_H_
 
 #include <queue>
+#include <map>
 #include "link.h"
 #include "message.h"
 #include "thread.h"
@@ -54,13 +55,22 @@ public:
 	*/
 
 protected:
-	void push_response(Response *resp);
+	// 在异步线程中, 返回响应
+	void async_send(Response *resp);
+	
 	HandlerState ok(){ return HANDLE_OK; };
 	HandlerState fail(){ return HANDLE_FAIL; };
 	HandlerState resp(){ return HANDLE_RESP; };
+	
+	Mutex mutex;
+	std::map<int, Link *> links;
 
 private:
 	SelectableQueue<Response *> resps;
+
+	friend class Server;
+	HandlerState on_accept(Link *link);
+	HandlerState on_close(Link *link);
 };
 
 }; // namespace sim
