@@ -10,16 +10,19 @@ public:
 	virtual sim::HandlerState close(const sim::Session &sess);
 	virtual sim::HandlerState proc(const sim::Request &req, sim::Response *resp);
 private:
+	Mutex mutex;
 	static void* _run_thread(void *arg);
 	std::map<int64_t, sim::Session> sessions;
 };
 
 sim::HandlerState ThreadHandler::accept(const sim::Session &sess){
+	Locking l(&mutex);
 	sessions[sess.id] = sess;
 	return ok();
 }
 
 sim::HandlerState ThreadHandler::close(const sim::Session &sess){
+	Locking l(&mutex);
 	sessions.erase(sess.id);
 	return ok();
 }
@@ -36,7 +39,11 @@ void* ThreadHandler::_run_thread(void *arg){
 	ThreadHandler *handler = (ThreadHandler *)arg;
 	while(1){
 		sleep(2);
-		std::map<int64_t, sim::Session> sessions = handler->sessions;
+		std::map<int64_t, sim::Session> sessions;
+		{
+			Locking l(&handler->mutex);
+			sessions = handler->sessions;
+		}
 		std::map<int64_t, sim::Session>::iterator it;
 		for(it=sessions.begin(); it!=sessions.end(); it++){
 			sim::Response *resp = new sim::Response();
