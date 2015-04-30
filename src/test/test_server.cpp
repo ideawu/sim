@@ -64,11 +64,14 @@ sim::HandlerState ThreadHandler::proc(const sim::Request &req, sim::Response *re
 
 
 int main(int argc, char **argv){
-	sim::Server *serv = sim::Server::listen("127.0.0.1", 8800);
+	const char *ip = "127.0.0.1";
+	int port = 8800;
+	sim::Server *serv = sim::Server::listen(ip, port);
 	if(!serv){
 		log_fatal("");
 		exit(0);
 	}
+	log_info("server listen on %s:%d", ip, port);
 	
 	ThreadHandler handler;
 	serv->add_handler(&handler);
