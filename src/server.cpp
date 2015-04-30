@@ -49,13 +49,14 @@ Server* Server::listen(const std::string &ip, int port){
 }
 
 void Server::add_handler(Handler *handler){
+	handler->server = this;
 	this->handlers.push_back(handler);
 	if(handler->fd() > 0){
 		fdes->set(handler->fd(), FDEVENT_IN, HANDLER_TYPE, handler);
 	}
 }
 
-Link* Server::accept_link(){
+Session* Server::accept_session(){
 	Link *link = serv_link->accept();
 	if(link == NULL){
 		log_error("accept failed! %s", strerror(errno));
@@ -67,11 +68,16 @@ Link* Server::accept_link(){
 	link->create_time = millitime();
 	link->active_time = link->create_time;
 	
+	Session *sess = new Session();
+	sess->link = link;
+	this->sessions[sess->id] = sess;
+	
 	for(int i=0; i<this->handlers.size(); i++){
 		Handler *handler = this->handlers[i];
-		HandlerState state = handler->on_accept(link);
+		HandlerState state = handler->accept(*sess);
 		if(state == HANDLE_FAIL){
 			delete link;
+			delete sess;
 			return NULL;
 		}
 	}
@@ -79,22 +85,26 @@ Link* Server::accept_link(){
 	this->link_count ++;				
 	log_debug("new link from %s:%d, fd: %d, links: %d",
 		link->remote_ip, link->remote_port, link->fd(), this->link_count);
-	fdes->set(link->fd(), FDEVENT_IN, DEFAULT_TYPE, link);
+	fdes->set(link->fd(), FDEVENT_IN, DEFAULT_TYPE, sess);
 	
-	return link;
+	return sess;
 }
 
-int Server::close_link(Link *link){
+int Server::close_session(Session *sess){
+	Link *link = sess->link;
 	for(int i=0; i<this->handlers.size(); i++){
 		Handler *handler = this->handlers[i];
-		handler->on_close(link);
+		handler->close(*sess);
 	}
 	
 	this->link_count --;
 	log_debug("delete link %s:%d, fd: %d, links: %d",
 		link->remote_ip, link->remote_port, link->fd(), this->link_count);
 	fdes->del(link->fd());
+
+	this->sessions.erase(sess->id);
 	delete link;
+	delete sess;
 	return 0;
 }
 
@@ -106,14 +116,15 @@ static std::string msg_str(const Message &msg){
 	return s;
 }
 
-int Server::read_link(Link *link){
+int Server::read_session(Session *sess){
+	Link *link = sess->link;
 	if(link->error()){
 		return 0;
 	}
 	
 	int len = link->read();
 	if(len <= 0){
-		this->close_link(link);
+		this->close_session(sess);
 		return -1;
 	}
 	
@@ -122,14 +133,14 @@ int Server::read_link(Link *link){
 		int ret = link->parse(&req.msg);
 		if(ret == -1){
 			log_info("fd: %d, parse error, delete link", link->fd());
-			this->close_link(link);
+			this->close_session(sess);
 			return -1;
 		}else if(ret == 0){
 			// 报文未就绪, 继续读网络
 			break;
 		}
 		req.stime = millitime();
-		req.link = link;
+		req.sess = *sess;
 
 		Response resp;
 		for(int i=0; i<this->handlers.size(); i++){
@@ -140,7 +151,7 @@ int Server::read_link(Link *link){
 			if(state == HANDLE_RESP){
 				link->send(resp.msg);
 				if(link && !link->output.empty()){
-					fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, link);
+					fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, sess);
 				}
 				
 				if(log_level() >= Logger::LEVEL_DEBUG){
@@ -150,7 +161,7 @@ int Server::read_link(Link *link){
 						msg_str(resp.msg).c_str());
 				}
 			}else if(state == HANDLE_FAIL){
-				this->close_link(link);
+				this->close_session(sess);
 				return -1;
 			}
 		}
@@ -159,7 +170,8 @@ int Server::read_link(Link *link){
 	return 0;
 }
 
-int Server::write_link(Link *link){
+int Server::write_session(Session *sess){
+	Link *link = sess->link;
 	if(link->error()){
 		return 0;
 	}
@@ -167,13 +179,22 @@ int Server::write_link(Link *link){
 	int len = link->write();
 	if(len <= 0){
 		log_debug("fd: %d, write: %d, delete link", link->fd(), len);
-		this->close_link(link);
+		this->close_session(sess);
 		return -1;
 	}
 	if(link->output.empty()){
 		fdes->clr(link->fd(), FDEVENT_OUT);
 	}
 	return 0;
+}
+
+Session* Server::get_session(int64_t sess_id){
+	std::map<int64_t, Session *>::iterator it;
+	it = sessions.find(sess_id);
+	if(it == sessions.end()){
+		return NULL;
+	}
+	return it->second;
 }
 
 void Server::loop(){
@@ -189,33 +210,36 @@ void Server::loop(){
 		
 		for(int i=0; i<(int)events->size(); i++){
 			const Fdevent *fde = events->at(i);
-			Link *link = NULL;
 			if(fde->data.ptr == serv_link){
-				link = this->accept_link();
+				this->accept_session();
 			}else if(fde->data.num == HANDLER_TYPE){
 				Handler *handler = (Handler *)fde->data.ptr;
 				while(Response *resp = handler->handle()){
-					Link *link = resp->link;
-					link->send(resp->msg);
-					if(link && !link->output.empty()){
-						fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, link);
+					Session *sess = this->get_session(resp->sess.id);
+					if(sess){
+						Link *link = sess->link;
+						link->send(resp->msg);
+						if(link && !link->output.empty()){
+							fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, sess);
+						}
 					}
 					delete resp;
 				}
 			}else{
-				Link *link = (Link *)fde->data.ptr;
+				Session *sess = (Session *)fde->data.ptr;
+				Link *link = sess->link;
 				if(fde->events & FDEVENT_IN){
-					if(this->read_link(link) == -1){
+					if(this->read_session(sess) == -1){
 						continue;
 					}
 				}
 				if(fde->events & FDEVENT_OUT){
-					if(this->write_link(link) == -1){
+					if(this->write_session(sess) == -1){
 						continue;
 					}
 				}
 				if(link && !link->output.empty()){
-					fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, link);
+					fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, sess);
 				}
 			}
 		}

@@ -9,6 +9,23 @@
 
 namespace sim{
 
+class Server;
+
+class Session
+{
+public:
+	int64_t id;
+	Link *link;
+	
+	Session(){
+		static int64_t inc = 0;
+		this->id = inc ++;
+		this->link = NULL;
+	}
+	~Session(){
+	}
+};
+
 typedef enum{
 	HANDLE_OK   = 0,
 	HANDLE_FAIL = 1,
@@ -18,7 +35,7 @@ typedef enum{
 class Request{
 public:
 	Message msg;
-	Link *link;
+	Session sess;
 
 	double stime;
 	double time_wait;
@@ -28,7 +45,7 @@ public:
 class Response{
 public:
 	Message msg;
-	Link *link;
+	Session sess;
 };
 	
 class Handler
@@ -37,24 +54,24 @@ public:
 	Handler(){};
 	virtual ~Handler(){};
 
+	virtual HandlerState accept(const Session &sess);
+	virtual HandlerState close(const Session &sess);
+	
+	// 如果有响应需要立即返回给客户端, 在函数内返回 HANDLE_RESP;
+	virtual HandlerState proc(const Request &req, Response *resp);
+	//virtual int init();
+	//virtual void thread();
+	
 	virtual int fd(){
 		return resps.fd();
 	}
-	virtual HandlerState accept(Link *link);
-	virtual HandlerState close(Link *link);
-	// 如果有响应需要立即返回给客户端, 在函数内返回 HANDLE_RESP;
-	virtual HandlerState proc(const Request &req, Response *resp);
-	
 	// 当 fd() 有可读事件时, 调用本函数
-	Response* handle();
+	virtual Response* handle();
 	
-	/*
-	如果想在主线程内读取文件, 或者你想实现一个其它协议的 handler, 你需要:
-	1. 重写 fd() 方法, 返回 socket
-	2. 重写 handler() 方法, 在 handler() 里进行 read()
-	*/
+	friend class Server;
 
 protected:
+	Server *server;
 	// 在异步线程中, 返回响应
 	void async_send(Response *resp);
 	
@@ -62,15 +79,8 @@ protected:
 	HandlerState fail(){ return HANDLE_FAIL; };
 	HandlerState resp(){ return HANDLE_RESP; };
 	
-	Mutex mutex;
-	std::map<int, Link *> links;
-
 private:
 	SelectableQueue<Response *> resps;
-
-	friend class Server;
-	HandlerState on_accept(Link *link);
-	HandlerState on_close(Link *link);
 };
 
 }; // namespace sim

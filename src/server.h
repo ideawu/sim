@@ -11,6 +11,8 @@ class Fdevents;
 
 namespace sim{
 
+class Session;
+
 class Server
 {
 public:
@@ -19,19 +21,24 @@ public:
 	Server();
 	~Server();
 	
-	void loop();
 	void add_handler(Handler *handler);
-
+	
+	void loop();
+	
+	int send(int64_t sess_id, const Message &msg);
+	int send_all(const Message &msg);
 private:
 	Fdevents *fdes;
 	Link *serv_link;
 	int link_count;
+	std::map<int64_t, Session *> sessions;
 	std::vector<Handler*> handlers;
 
-	Link* accept_link();
-	int close_link(Link *link);
-	int read_link(Link *link);
-	int write_link(Link *link);
+	Session* accept_session();
+	Session* get_session(int64_t sess_id);
+	int close_session(Session *sess);
+	int read_session(Session *sess);
+	int write_session(Session *sess);
 };
 
 }; // namespace sim

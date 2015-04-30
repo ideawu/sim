@@ -18,7 +18,7 @@ public:
 	std::string type() const;
 	void set_type(const std::string &type);
 	
-	void add(const std::string &val);
+	void add(const std::string &val); // 自增 tag, 从 0 开始
 	void set(int tag, int32_t val);
 	void set(int tag, int64_t val);
 	void set(int tag, const char *val);

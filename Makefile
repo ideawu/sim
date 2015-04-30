@@ -3,6 +3,7 @@ include build_config.mk
 
 all:
 	cd src; make
+	cd src/test; make
 
 clean:
 	cd src; make clean
