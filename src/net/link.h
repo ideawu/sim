@@ -17,8 +17,9 @@ private:
 	bool noblock_;
 	bool error_;
 	Decoder decoder_;
-	std::string output_;
 public:
+	std::string output;
+
 	char remote_ip[INET_ADDRSTRLEN];
 	int remote_port;
 
@@ -45,7 +46,9 @@ public:
 	}
 
 	static Link* connect(const char *ip, int port);
+	static Link* connect(const std::string &ip, int port);
 	static Link* listen(const char *ip, int port);
+	static Link* listen(const std::string &ip, int port);
 	Link* accept();
 
 	// read network data info buffer
@@ -56,6 +59,7 @@ public:
 	int flush();
 
 	int parse(Message *msg);
+	int send(const Message &msg);
 };
 
 

@@ -51,6 +51,10 @@ void Link::noblock(bool enable){
 	}
 }
 
+Link* Link::connect(const std::string &ip, int port){
+	return connect(ip.c_str(), port);
+}
+
 Link* Link::connect(const char *ip, int port){
 	Link *link;
 	int sock = -1;
@@ -79,6 +83,10 @@ sock_err:
 		::close(sock);
 	}
 	return NULL;
+}
+
+Link* Link::listen(const std::string &ip, int port){
+	return listen(ip.c_str(), port);
 }
 
 Link* Link::listen(const char *ip, int port){
@@ -182,10 +190,10 @@ int Link::read(){
 int Link::write(){
 	int ret = 0;
 	int want;
-	while((want = output_.size()) > 0){
+	while((want = output.size()) > 0){
 		// test
 		//want = 1;
-		int len = ::write(sock, output_.data(), want);
+		int len = ::write(sock, output.data(), want);
 		if(len == -1){
 			if(errno == EINTR){
 				continue;
@@ -202,7 +210,7 @@ int Link::write(){
 				break;
 			}
 			ret += len;
-			output_ = std::string(output_.data() + len, output_.size() - len);
+			output = std::string(output.data() + len, output.size() - len);
 		}
 		if(!noblock_){
 			break;
@@ -213,7 +221,7 @@ int Link::write(){
 
 int Link::flush(){
 	int len = 0;
-	while(!output_.empty()){
+	while(!output.empty()){
 		int ret = this->write();
 		if(ret == -1){
 			return -1;
