@@ -35,7 +35,7 @@ int main(int argc, char **argv){
 				break;
 			}
 			
-			printf("%s\n", tmp.get(49)->c_str());
+			//printf("%s\n", tmp.get(49)->c_str());
 			printf("%s", tmp.encode().c_str());
 			// 继续解析, 因为可能一次读取到多个报文
 		}

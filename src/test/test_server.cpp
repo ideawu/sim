@@ -6,7 +6,7 @@ class ThreadHandler : public sim::Handler
 {
 public:
 	ThreadHandler();
-	virtual sim::HandlerState accept(const sim::Session &sess);
+//	virtual sim::HandlerState accept(const sim::Session &sess);
 	virtual sim::HandlerState close(const sim::Session &sess);
 	virtual sim::HandlerState proc(const sim::Request &req, sim::Response *resp);
 private:
@@ -15,11 +15,9 @@ private:
 	std::map<int64_t, sim::Session> sessions;
 };
 
-sim::HandlerState ThreadHandler::accept(const sim::Session &sess){
-	Locking l(&mutex);
-	sessions[sess.id] = sess;
-	return ok();
-}
+//sim::HandlerState ThreadHandler::accept(const sim::Session &sess){
+//	return ok();
+//}
 
 sim::HandlerState ThreadHandler::close(const sim::Session &sess){
 	Locking l(&mutex);
@@ -39,6 +37,7 @@ void* ThreadHandler::_run_thread(void *arg){
 	ThreadHandler *handler = (ThreadHandler *)arg;
 	while(1){
 		sleep(2);
+		
 		std::map<int64_t, sim::Session> sessions;
 		{
 			Locking l(&handler->mutex);
@@ -56,7 +55,24 @@ void* ThreadHandler::_run_thread(void *arg){
 }
 
 sim::HandlerState ThreadHandler::proc(const sim::Request &req, sim::Response *resp){
-	resp->msg.add("ok");
+	const std::string *cmd = req.msg.get(0);
+	const std::string *token = req.msg.get(1);
+	if(cmd && token && *cmd == "subscribe" && *token == "123456"){
+		resp->msg.add("ok");
+		resp->msg.add("subscibe successful.");
+		
+		Locking l(&mutex);
+		sessions[req.sess.id] = req.sess;
+	}else{
+		if(cmd && *cmd == "subscribe"){
+			resp->msg.add("error");
+			resp->msg.add("invalid token!");
+		}else{
+			resp->msg.add("error");
+			resp->msg.add("unknown command!");
+		}
+	}
+
 	return this->resp();
 }
 

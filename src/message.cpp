@@ -36,9 +36,8 @@ void Message::set(int tag, const char *val){
 void Message::set(int tag, const std::string &val){
 	if(tag == 0){
 		this->set_type(val);
-	}else{
-		fields_[tag] = val;
 	}
+	fields_[tag] = val;
 }
 
 void Message::add(const std::string &val){
