@@ -1,6 +1,7 @@
-CFLAGS=
+include ../../build_config.mk
+
+CFLAGS +=
 OBJS = message.o decoder.o sim.o fde.o link.o handler.o server.o
-CXX=g++
 
 all: $(OBJS)
 	

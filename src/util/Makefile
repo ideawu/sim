@@ -1,4 +1,4 @@
-CFLAGS=
+CFLAGS +=
 OBJS = log.o
 CXX=g++
 

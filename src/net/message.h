@@ -1,6 +1,8 @@
 #ifndef SIM_MESSAGE_H_
 #define SIM_MESSAGE_H_
 
+#include <stdint.h>
+#include <inttypes.h>
 #include <string>
 #include <map>
 

@@ -8,4 +8,6 @@ tmp
 *.swp
 *_cpy_*
 *.dSYM*
+build_config.mk
+
 

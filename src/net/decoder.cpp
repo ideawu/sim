@@ -3,8 +3,6 @@
 
 namespace sim{
 
-const static char *KV_END_BYTES = " \t";
-
 int Decoder::push(const char *buf, int len){
 	buffer_.append(buf, len);
 	return len;
