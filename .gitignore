@@ -9,5 +9,6 @@ tmp
 *_cpy_*
 *.dSYM*
 build_config.mk
+output
 
 

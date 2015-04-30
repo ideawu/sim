@@ -4,9 +4,10 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "fde.h"
 #include "link.h"
 #include "handler.h"
+
+class Fdevents;
 
 namespace sim{
 

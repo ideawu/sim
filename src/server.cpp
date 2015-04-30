@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
+#include "fde.h"
 #include "server.h"
 #include "log.h"
 

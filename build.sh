@@ -65,3 +65,6 @@ echo "CFLAGS += ${PLATFORM_CFLAGS}" >> build_config.mk
 echo "CLIBS=" >> build_config.mk
 echo "CLIBS += ${PLATFORM_CLIBS}" >> build_config.mk
 
+echo "OUTPUT_DIR=${BASE_DIR}/output" >> build_config.mk
+echo "HEADER_OUTPUT_DIR=${BASE_DIR}/output/include/sim" >> build_config.mk
+

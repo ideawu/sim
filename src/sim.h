@@ -1,6 +1,8 @@
 #ifndef SIM_SIM_H_
 #define SIM_SIM_H_
 
+#include "log.h"
+#include "thread.h"
 #include "message.h"
 #include "decoder.h"
 #include "link.h"

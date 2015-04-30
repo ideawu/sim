@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "sim.h"
-#include "../util/log.h"
-#include "../util/thread.h"
+#include "sim/sim.h"
 
 class ThreadHandler : public sim::Handler
 {
