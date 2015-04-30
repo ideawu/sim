@@ -17,11 +17,18 @@ int Decoder::parse(Message *msg){
 	}
 	
 	const char *key = buffer_.data();
+	for(int i=0; i<(int)buffer_.size(); i++){
+		if(isspace(buffer_[i])){
+			key ++;
+		}else{
+			break;
+		}
+	}
 	const char *msg_end = (const char *)memchr(key, sim::MSG_END_BYTE, buffer_.size());
 	if(!msg_end){
 		return 0;
 	}
-	int msg_len = msg_end - key;
+	int msg_len = msg_end - buffer_.data();
 	int size = msg_len;
 	
 	int auto_tag = 0;
@@ -53,6 +60,9 @@ int Decoder::parse(Message *msg){
 		val_len = end - val;
 		size -= val_len + 1;
 
+		if(val_len > 0 && val[val_len - 1] == '\r'){
+			val_len -= 1;
+		}
 		std::string val_s(val, val_len);
 		msg->set(tag, val_s);
 

@@ -1,5 +1,5 @@
-#ifndef FIX_FIX_H_
-#define FIX_FIX_H_
+#ifndef SIM_SIM_H_
+#define SIM_SIM_H_
 
 #include "message.h"
 #include "decoder.h"
