@@ -1,5 +1,5 @@
 #include "handler.h"
-#include "../util/log.h"
+#include "log.h"
 
 namespace sim{
 

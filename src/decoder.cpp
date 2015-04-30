@@ -1,4 +1,4 @@
-#include "../util/strings.h"
+#include "strings.h"
 #include "sim.h"
 
 namespace sim{

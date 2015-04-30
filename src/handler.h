@@ -4,7 +4,7 @@
 #include <queue>
 #include "link.h"
 #include "message.h"
-#include "../util/thread.h"
+#include "thread.h"
 
 namespace sim{
 

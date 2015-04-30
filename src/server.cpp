@@ -4,7 +4,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include "server.h"
-#include "../util/log.h"
+#include "log.h"
 
 namespace sim{
 	

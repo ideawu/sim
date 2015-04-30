@@ -1,9 +1,11 @@
-include ../../build_config.mk
+include ../build_config.mk
 
 CFLAGS +=
-OBJS = message.o decoder.o sim.o fde.o link.o handler.o server.o
+OBJS = message.o decoder.o sim.o fde.o link.o handler.o server.o \
+	log.o
 
 all: $(OBJS)
+	ar -cru ./libsim.a ${OBJS}
 	
 fde.o: fde.h fde.cpp fde_select.cpp fde_epoll.cpp
 	${CXX} ${CFLAGS} -c fde.cpp
