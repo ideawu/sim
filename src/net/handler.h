@@ -14,14 +14,20 @@ typedef enum{
 	HANDLE_RESP = 1,
 }HandlerState;
 
+class Request{
+public:
+	Message msg;
+	Link *link;
+
+	double stime;
+	double time_wait;
+	double time_proc;
+};
+
 class Response{
 public:
 	Message msg;
 	Link *link;
-	Response(){
-	}
-	~Response(){
-	}
 };
 	
 class Handler
@@ -31,16 +37,19 @@ public:
 	virtual ~Handler(){};
 
 	virtual int fd(){
-		return -1;
+		return resps.fd();
 	}
 	virtual HandlerState accept(Link *link);
 	virtual HandlerState close(Link *link);
-	virtual HandlerState proc(Link *link, const Message &msg);
+	virtual HandlerState proc(const Request &req, Response *resp);
 	
-	virtual Response* handle();
+	Response* handle();
 
 protected:
 	void push_response(Response *resp);
+	HandlerState ok(){ return HANDLE_OK; };
+	HandlerState fail(){ return HANDLE_FAIL; };
+	HandlerState resp(){ return HANDLE_RESP; };
 
 private:
 	SelectableQueue<Response *> resps;

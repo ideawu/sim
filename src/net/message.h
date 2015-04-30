@@ -16,13 +16,14 @@ public:
 	std::string type() const;
 	void set_type(const std::string &type);
 	
+	void add(const std::string &val);
 	void set(int tag, int32_t val);
 	void set(int tag, int64_t val);
 	void set(int tag, const char *val);
 	void set(int tag, const std::string &val);
 	const std::string* get(int tag) const;
 	
-	std::string encode();
+	std::string encode() const;
 
 private:
 	std::string type_;

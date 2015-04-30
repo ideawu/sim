@@ -3,6 +3,9 @@
 
 #include "message.h"
 #include "decoder.h"
+#include "link.h"
+#include "server.h"
+#include "handler.h"
 
 namespace sim{
 

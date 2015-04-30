@@ -235,4 +235,10 @@ int Link::parse(Message *msg){
 	return decoder_.parse(msg);
 }
 
+int Link::send(const Message &msg){
+	std::string s = msg.encode();
+	output.append(s);
+	return (int)s.size();
+}
+
 }; // namespace sim

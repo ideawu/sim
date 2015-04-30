@@ -41,6 +41,18 @@ void Message::set(int tag, const std::string &val){
 	}
 }
 
+void Message::add(const std::string &val){
+	int tag;
+	std::map<int, std::string>::const_reverse_iterator it;
+	it = fields_.rbegin();
+	if(it == fields_.rend()){
+		tag = 0;
+	}else{
+		tag = it->first + 1;
+	}
+	this->set(tag, val);
+}
+
 const std::string* Message::get(int tag) const{
 	std::map<int, std::string>::const_iterator it;
 	it = fields_.find(tag);
@@ -59,7 +71,7 @@ static std::string encode_field(int tag, const std::string &val){
 	return buffer;
 }
 
-std::string Message::encode(){
+std::string Message::encode() const{
 	std::string buffer;
 	buffer.append(encode_field(0, this->type()));
 	std::map<int, std::string>::const_iterator it;

@@ -97,6 +97,14 @@ int Server::close_link(Link *link){
 	return 0;
 }
 
+static std::string msg_str(const Message &msg){
+	std::string s = msg.encode();
+	if(!s.empty()){
+		s[s.size() - 1] = '\0';
+	}
+	return s;
+}
+
 int Server::read_link(Link *link){
 	if(link->error()){
 		return 0;
@@ -104,14 +112,13 @@ int Server::read_link(Link *link){
 	
 	int len = link->read();
 	if(len <= 0){
-		log_debug("fd: %d, read: %d, delete link", link->fd(), len);
 		this->close_link(link);
 		return -1;
 	}
 	
 	while(1){
-		Message msg;
-		int ret = link->parse(&msg);
+		Request req;
+		int ret = link->parse(&req.msg);
 		if(ret == -1){
 			log_info("fd: %d, parse error, delete link", link->fd());
 			this->close_link(link);
@@ -120,12 +127,27 @@ int Server::read_link(Link *link){
 			// 报文未就绪, 继续读网络
 			break;
 		}
+		req.stime = millitime();
+		req.link = link;
 
+		Response resp;
 		for(int i=0; i<this->handlers.size(); i++){
 			Handler *handler = this->handlers[i];
-			HandlerState state = handler->proc(link, msg);
+			req.time_wait = 1000 * (millitime() - req.stime);
+			HandlerState state = handler->proc(req, &resp);
+			req.time_proc = 1000 * (millitime() - req.stime) - req.time_wait;
 			if(state == HANDLE_RESP){
-				//
+				link->send(resp.msg);
+				if(link && !link->output.empty()){
+					fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, link);
+				}
+				
+				if(log_level() >= Logger::LEVEL_DEBUG){
+					log_debug("w:%.3f,p:%.3f, req: %s resp: %s",
+						req.time_wait, req.time_proc,
+						msg_str(req.msg).c_str(),
+						msg_str(resp.msg).c_str());
+				}
 			}else if(state == HANDLE_FAIL){
 				this->close_link(link);
 				return -1;
@@ -171,16 +193,13 @@ void Server::loop(){
 				link = this->accept_link();
 			}else if(fde->data.num == HANDLER_TYPE){
 				Handler *handler = (Handler *)fde->data.ptr;
-				while(1){
-					Response *resp = handler->handle();
-					if(resp){
-						Link *link = resp->link;
-						link->send(resp->msg);
-						if(link && !link->output.empty()){
-							fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, link);
-						}
-						delete resp;
+				while(Response *resp = handler->handle()){
+					Link *link = resp->link;
+					link->send(resp->msg);
+					if(link && !link->output.empty()){
+						fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, link);
 					}
+					delete resp;
 				}
 			}else{
 				Link *link = (Link *)fde->data.ptr;
