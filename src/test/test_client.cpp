@@ -20,7 +20,7 @@ int main(int argc, char **argv){
 	
 	sim::Message msg;
 	msg.add("ping");
-	msg.add("hi");
+	msg.add("hello world!");
 	std::string msg_str = msg.encode();
 	
 	int total_reqs = 0;
