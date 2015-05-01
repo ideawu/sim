@@ -3,7 +3,6 @@
 
 #include <sys/time.h>
 #include <string>
-
 #include "message.h"
 #include "decoder.h"
 #include "link.h"

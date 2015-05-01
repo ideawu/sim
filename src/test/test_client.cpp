@@ -5,6 +5,8 @@
 #include "sim/fde.h"
 
 int main(int argc, char **argv){
+	set_log_level("info");
+	
 	sim::Link *link = sim::Link::connect("127.0.0.1", 8800);
 	if(!link){
 		log_fatal("");

@@ -23,6 +23,26 @@ void set_log_level(int level){
 	logger.set_level(level);
 }
 
+void set_log_level(const char *s){
+	std::string ss(s);
+	std::transform(ss.begin(), ss.end(), ss.begin(), ::tolower);
+	int level = Logger::LEVEL_DEBUG;
+	if(ss == "fatal"){
+		level = Logger::LEVEL_FATAL;
+	}else if(ss == "error"){
+		level = Logger::LEVEL_ERROR;
+	}else if(ss == "warn"){
+		level = Logger::LEVEL_WARN;
+	}else if(ss == "info"){
+		level = Logger::LEVEL_INFO;
+	}else if(ss == "debug"){
+		level = Logger::LEVEL_DEBUG;
+	}else if(ss == "trace"){
+		level = Logger::LEVEL_TRACE;
+	}
+	logger.set_level(level);
+}
+
 int log_write(int level, const char *fmt, ...){
 	va_list ap;
 	va_start(ap, fmt);
