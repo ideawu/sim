@@ -1,4 +1,3 @@
-#include "link.h"
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -6,6 +5,7 @@
 #include <stdarg.h>
 #include <sys/socket.h>
 #include "link.h"
+#include "log.h"
 
 namespace sim{
 
@@ -205,7 +205,7 @@ int Link::write(){
 				return -1;
 			}
 		}else{
-			//log_debug("fd: %d, want: %d, write: %d", sock, want, len);
+			//log_info("fd: %d, want: %d, write: %d", sock, want, len);
 			if(len == 0){
 				// ?
 				break;

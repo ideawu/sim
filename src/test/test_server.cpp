@@ -57,22 +57,26 @@ void* ThreadHandler::_run_thread(void *arg){
 }
 
 sim::HandlerState ThreadHandler::proc(const sim::Request &req, sim::Response *resp){
-	const std::string *cmd = req.msg.get(0);
-	const std::string *token = req.msg.get(1);
-	if(cmd && token && *cmd == "subscribe" && *token == "123456"){
+	std::string cmd = req.msg.type();
+	
+	if(cmd == "ping"){
 		resp->msg.add("ok");
-		resp->msg.add("subscibe successful.");
+		resp->msg.add("pong");
+	}else if(cmd == "subscribe"){
+		const std::string *token = req.msg.get(1);
+		if(token && *token == "123456"){
+			resp->msg.add("ok");
+			resp->msg.add("subscibe successful.");
 		
-		Locking l(&mutex);
-		sessions[req.sess.id] = req.sess;
-	}else{
-		if(cmd && *cmd == "subscribe"){
-			resp->msg.add("error");
-			resp->msg.add("invalid token!");
+			Locking l(&mutex);
+			sessions[req.sess.id] = req.sess;
 		}else{
 			resp->msg.add("error");
-			resp->msg.add("unknown command!");
+			resp->msg.add("invalid token!");
 		}
+	}else{
+		resp->msg.add("client_error");
+		resp->msg.add("unknown command!");
 	}
 
 	return this->resp();
