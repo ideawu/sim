@@ -74,6 +74,7 @@ int main(int argc, char **argv){
 						double ts = etime - stime;
 						int qps = total_reqs / ts;
 						log_info("recv all, time: %.2f ms, %d qps", 1000*ts, qps);
+						exit(0);
 					}
 				}
 			}
