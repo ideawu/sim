@@ -4,6 +4,8 @@
 
 namespace sim{
 
+const static int BUF_RESIZE_TRIGGER = 16 * 1024;
+
 int Decoder::push(const char *buf, int len){
 	buffer_.append(buf, len);
 	//log_debug("'%s'", str_escape(buffer_).c_str());
@@ -12,28 +14,27 @@ int Decoder::push(const char *buf, int len){
 
 int Decoder::parse(Message *msg){
 	msg->reset();
-	if(buffer_.empty()){
+	
+	int data_size = buffer_.size() - buffer_offset;
+	if(data_size == 0){
 		return 0;
 	}
 	
-	const char *key = buffer_.data();
-	for(int i=0; i<(int)buffer_.size(); i++){
-		if(isspace(buffer_[i])){
-			key ++;
-		}else{
-			break;
-		}
+	const char *data = buffer_.data() + buffer_offset;
+	const char *key = data;
+	for(int i=0; i<data_size && isspace(data[i]); i++){
+		key ++;
 	}
-	const char *msg_end = (const char *)memchr(key, sim::MSG_END_BYTE, buffer_.size());
+	const char *msg_end = (const char *)memchr(key, sim::MSG_END_BYTE, data_size);
 	if(!msg_end){
 		return 0;
 	}
-	int msg_len = msg_end - buffer_.data() + 1;
+	int msg_len = msg_end - data + 1;
 	int size = msg_len;
 	
 	int auto_tag = 0;
 	while(1){
-		int key_len;
+		int key_len = 0;
 		int val_len;
 		int tag;
 
@@ -55,8 +56,6 @@ int Decoder::parse(Message *msg){
 			std::string key_s(key, key_len);
 			tag = str_to_int(key_s);
 		}
-
-		//printf("%u key: %u, val: %u, end: %u, %u\n", __LINE__, key, val, end, end - key);
 	
 		val_len = end - val;
 		size -= val_len + 1;
@@ -64,6 +63,9 @@ int Decoder::parse(Message *msg){
 		if(val_len > 0 && val[val_len - 1] == '\r'){
 			val_len -= 1;
 		}
+
+		//printf("%u key: %u, val: %u\n", __LINE__, key_len, val_len);
+
 		std::string val_s(val, val_len);
 		msg->set(tag, val_s);
 
@@ -79,8 +81,13 @@ int Decoder::parse(Message *msg){
 			if(key == msg_end){
 				key += 1;
 			}
+			buffer_offset += msg_len;
+			if(buffer_offset >= BUF_RESIZE_TRIGGER){
+				//log_debug("resize buffer");
+				buffer_ = std::string(key, buffer_.size() - buffer_offset);
+				buffer_offset = 0;
+			}
 			// 一个完整的报文解析结束, 从缓冲区清除已经解析了的数据
-			buffer_ = std::string(key, buffer_.size() - msg_len); // TODO: 可以优化
 			//log_debug("msg.len: %d, buffer.len: %d", msg_len, buffer_.size());
 			return 1;
 		}
