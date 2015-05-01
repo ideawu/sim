@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "sim/sim.h"
+#include "sim/log.h"
 
 int main(int argc, char **argv){
 	sim::Message msg;

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "sim/sim.h"
+#include "sim/log.h"
 
 int main(int argc, char **argv){
 	sim::Link *serv = sim::Link::listen("127.0.0.1", 8800);

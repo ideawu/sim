@@ -3,21 +3,14 @@
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
+#include "sim.h"
 #include "fde.h"
-#include "server.h"
 #include "log.h"
 
 namespace sim{
 	
 const static int DEFAULT_TYPE = 0;
 const static int HANDLER_TYPE = 1;
-	
-static inline double millitime(){
-	struct timeval now;
-	gettimeofday(&now, NULL);
-	double ret = now.tv_sec + now.tv_usec/1000.0/1000.0;
-	return ret;
-}
 
 Server::Server(){
 	signal(SIGPIPE, SIG_IGN);

@@ -1,10 +1,12 @@
 #include "strings.h"
 #include "sim.h"
+#include "log.h"
 
 namespace sim{
 
 int Decoder::push(const char *buf, int len){
 	buffer_.append(buf, len);
+	//log_debug("%s", buffer_.c_str());
 	return len;
 }
 
@@ -26,7 +28,7 @@ int Decoder::parse(Message *msg){
 	if(!msg_end){
 		return 0;
 	}
-	int msg_len = msg_end - buffer_.data();
+	int msg_len = msg_end - buffer_.data() + 1;
 	int size = msg_len;
 	
 	int auto_tag = 0;
@@ -37,8 +39,9 @@ int Decoder::parse(Message *msg){
 
 		const char *end;
 		end = (const char *)memchr(key, sim::KV_END_BYTE, size);
+		// 兼容最后一个 \s 被省略的情况
 		if(end == NULL){
-			end = msg_end;
+			end = msg_end - 1;
 		}
 
 		const char *val = (const char *)memchr(key, sim::KV_SEP_BYTE, end - key);
@@ -67,13 +70,14 @@ int Decoder::parse(Message *msg){
 		key = end + 1;
 		auto_tag = tag + 1;
 		
-		if(key >= msg_end){
+		if(key == msg_end){
 			std::map<int, std::string>::iterator it;
 			for(it=msg->fields_.begin(); it!=msg->fields_.end(); it++){
 				it->second = sim::decode(it->second);
 			}
 			// 一个完整的报文解析结束, 从缓冲区清除已经解析了的数据
-			buffer_ = std::string(key, buffer_.size() - msg_len - 1); // TODO: 可以优化
+			buffer_ = std::string(key+1, buffer_.size() - msg_len); // TODO: 可以优化
+			//log_debug("msg.len: %d, buffer.len: %d", msg_len, buffer_.size());
 			return 1;
 		}
 	}
