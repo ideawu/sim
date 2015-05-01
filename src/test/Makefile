@@ -10,5 +10,5 @@ all: $(OBJS)
 	g++ -o test_client.out $(CFLAGS) test_client.cpp $(CLIBS)
 
 clean:
-	rm -rf *.o a.out
+	rm -rf *.o *.a *.out
 

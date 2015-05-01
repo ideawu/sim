@@ -17,5 +17,5 @@ fde.o: fde.h fde.cpp fde_select.cpp fde_epoll.cpp
 	$(CXX) ${CFLAGS} -c $< -o $@
 
 clean:
-	rm -rf *.o a.out $(OUTPUT_DIR)/$(LIB) $(HEADER_OUTPUT_DIR)
+	rm -rf *.o *.a *.out $(OUTPUT_DIR)/$(LIB) $(HEADER_OUTPUT_DIR)
 
