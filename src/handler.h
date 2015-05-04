@@ -1,22 +1,26 @@
 #ifndef SIM_HANDLER_H_
 #define SIM_HANDLER_H_
 
-#include <queue>
-#include <map>
 #include "link.h"
 #include "message.h"
 #include "thread.h"
-#include "server.h"
 
 namespace sim{
 
-class Server;
-
-typedef enum{
-	HANDLE_OK   = 0,
-	HANDLE_FAIL = 1,
-	HANDLE_RESP = 1,
-}HandlerState;
+class Session
+{
+public:
+	int64_t id;
+	Link *link;
+	
+	Session(){
+		static int64_t inc = 0;
+		this->id = inc ++;
+		this->link = NULL;
+	}
+	~Session(){
+	}
+};
 
 class Request{
 public:
@@ -33,6 +37,13 @@ public:
 	Message msg;
 	Session sess;
 };
+
+
+typedef enum{
+	HANDLE_OK   = 0,
+	HANDLE_FAIL = 1,
+	HANDLE_RESP = 1,
+}HandlerState;
 
 
 class Handler
@@ -64,10 +75,6 @@ public:
 	virtual Response* handle();
 	
 protected:
-	friend class Server;
-
-	Server *server;
-
 	// 将异步响应加入到队列中, 该响应会被发送给客户端.
 	// 如果 Handler 是多线程的, 可能会调用本方法将响应发给客户端.
 	void async_send(Response *resp);
@@ -75,7 +82,7 @@ protected:
 	HandlerState ok(){ return HANDLE_OK; };
 	HandlerState fail(){ return HANDLE_FAIL; };
 	HandlerState resp(){ return HANDLE_RESP; };
-	
+
 private:
 	SelectableQueue<Response *> resps;
 };

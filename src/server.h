@@ -5,28 +5,11 @@
 #include <vector>
 #include <map>
 #include "link.h"
+#include "handler.h"
 
 class Fdevents;
 
 namespace sim{
-
-class Handler;
-
-class Session
-{
-public:
-	int64_t id;
-	Link *link;
-	
-	Session(){
-		static int64_t inc = 0;
-		this->id = inc ++;
-		this->link = NULL;
-	}
-	~Session(){
-	}
-};
-
 
 class Server
 {

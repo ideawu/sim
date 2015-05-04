@@ -6,6 +6,7 @@
 #include "sim.h"
 #include "fde.h"
 #include "log.h"
+#include "server.h"
 
 namespace sim{
 	
@@ -42,7 +43,6 @@ Server* Server::listen(const std::string &ip, int port){
 }
 
 void Server::add_handler(Handler *handler){
-	handler->server = this;
 	this->handlers.push_back(handler);
 	if(handler->fd() > 0){
 		fdes->set(handler->fd(), FDEVENT_IN, HANDLER_TYPE, handler);
