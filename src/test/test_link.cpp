@@ -15,7 +15,7 @@ int main(int argc, char **argv){
 			log_fatal("");
 			exit(0);
 		}
-		log_debug("accpt link from %s:%d", link->remote_ip, link->remote_port);
+		log_debug("accept link from %s:%d", link->remote_ip, link->remote_port);
 	
 		while(1){
 			int ret;
@@ -25,14 +25,16 @@ int main(int argc, char **argv){
 				log_error("link closed.");
 				break;
 			}
-			sim::Message msg;
-			ret = link->parse(&msg);
-			if(ret == -1){
-				delete link;
-				log_error("parse error!");
-				break;
-			}
-			if(ret == 1){
+			while(1){
+				sim::Message msg;
+				ret = link->parse(&msg);
+				if(ret == -1){
+					delete link;
+					log_error("parse error!");
+					break;
+				}else if(ret == 0){
+					break;
+				}
 				log_debug("%s", msg.encode().c_str());
 			}
 		}
