@@ -4,7 +4,7 @@
 
 namespace sim{
 
-const static int BUF_RESIZE_TRIGGER = 16 * 1024;
+const static int BUF_RESIZE_TRIGGER = 18;//16 * 1024;
 
 int Decoder::push(const char *buf, int len){
 	buffer_.append(buf, len);
@@ -14,6 +14,12 @@ int Decoder::push(const char *buf, int len){
 
 int Decoder::parse(Message *msg){
 	msg->reset();
+
+	if(buffer_offset >= BUF_RESIZE_TRIGGER){
+		//log_debug("resize buffer");
+		buffer_ = std::string(buffer_.data() + buffer_offset, buffer_.size() - buffer_offset);
+		buffer_offset = 0;
+	}
 	
 	int data_size = buffer_.size() - buffer_offset;
 	if(data_size == 0){
@@ -25,6 +31,9 @@ int Decoder::parse(Message *msg){
 	for(int i=0; i<data_size && isspace(data[i]); i++){
 		key ++;
 	}
+	buffer_offset += (key - data);
+	data_size -= (key - data);
+	
 	const char *msg_end = (const char *)memchr(key, sim::MSG_END_BYTE, data_size);
 	if(!msg_end){
 		return 0;
@@ -82,11 +91,6 @@ int Decoder::parse(Message *msg){
 				key += 1;
 			}
 			buffer_offset += msg_len;
-			if(buffer_offset >= BUF_RESIZE_TRIGGER){
-				//log_debug("resize buffer");
-				buffer_ = std::string(key, buffer_.size() - buffer_offset);
-				buffer_offset = 0;
-			}
 			// 一个完整的报文解析结束, 从缓冲区清除已经解析了的数据
 			//log_debug("msg.len: %d, buffer.len: %d", msg_len, buffer_.size());
 			return 1;
