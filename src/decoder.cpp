@@ -4,7 +4,7 @@
 
 namespace sim{
 
-const static int BUF_RESIZE_TRIGGER = 18;//16 * 1024;
+const static int BUF_RESIZE_TRIGGER = 16 * 1024;
 
 int Decoder::push(const char *buf, int len){
 	buffer_.append(buf, len);
