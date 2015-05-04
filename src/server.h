@@ -5,13 +5,28 @@
 #include <vector>
 #include <map>
 #include "link.h"
-#include "handler.h"
 
 class Fdevents;
 
 namespace sim{
 
-class Session;
+class Handler;
+
+class Session
+{
+public:
+	int64_t id;
+	Link *link;
+	
+	Session(){
+		static int64_t inc = 0;
+		this->id = inc ++;
+		this->link = NULL;
+	}
+	~Session(){
+	}
+};
+
 
 class Server
 {
@@ -22,17 +37,16 @@ public:
 	~Server();
 	
 	void add_handler(Handler *handler);
-	
 	void loop();
 	
-	int send(int64_t sess_id, const Message &msg);
-	int send_all(const Message &msg);
+	//int send(int64_t sess_id, const Message &msg);
+	//int send_all(const Message &msg);
 private:
 	Fdevents *fdes;
 	Link *serv_link;
 	int link_count;
 	std::map<int64_t, Session *> sessions;
-	std::vector<Handler*> handlers;
+	std::vector<Handler *> handlers;
 
 	Session* accept_session();
 	Session* get_session(int64_t sess_id);
