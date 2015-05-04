@@ -123,7 +123,7 @@ int Server::read_session(Session *sess){
 	
 	while(1){
 		Request req;
-		int ret = link->parse(&req.msg);
+		int ret = link->recv(&req.msg);
 		if(ret == -1){
 			log_info("fd: %d, parse error, delete link", link->fd());
 			this->close_session(sess);

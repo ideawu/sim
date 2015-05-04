@@ -56,7 +56,7 @@ int main(int argc, char **argv){
 				}
 				while(1){
 					sim::Message msg;
-					ret = link->parse(&msg);
+					ret = link->recv(&msg);
 					if(ret == -1){
 						delete link;
 						log_error("parse error!");

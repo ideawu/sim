@@ -232,7 +232,7 @@ int Link::flush(){
 	return len;
 }
 
-int Link::parse(Message *msg){
+int Link::recv(Message *msg){
 	return decoder_.parse(msg);
 }
 

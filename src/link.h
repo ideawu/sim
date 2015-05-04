@@ -58,7 +58,7 @@ public:
 	// REQUIRES: nonblock
 	int flush();
 
-	int parse(Message *msg);
+	int recv(Message *msg);
 	int send(const Message &msg);
 };
 
