@@ -91,7 +91,7 @@ int main(int argc, char **argv){
 					double etime = sim::millitime();
 					double ts = etime - stime;
 					int qps = total_reqs / ts;
-					log_info("sent all, time: %.2f ms, %d qps", 1000*ts, qps);
+					log_info("sent all, time: %.2f s, %d qps", 1000*ts, qps);
 					fdes->clr(link->fd(), FDEVENT_OUT);
 				}
 				link->write();
