@@ -4,7 +4,7 @@ CFLAGS +=
 OBJS = sim.o message.o decoder.o link.o handler.o server.o \
 	fde.o log.o
 LIB=libsim.a
-HEADER_FILES=sim.h message.h decoder.h fde.h link.h handler.h server.h thread.h log.h
+HEADER_FILES=sim.h message.h decoder.h fde.h link.h handler.h server.h thread.h log.h strings.h
 
 all: $(OBJS)
 	mkdir -p $(HEADER_OUTPUT_DIR)

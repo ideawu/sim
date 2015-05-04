@@ -1,8 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "sim/sim.h"
-#include "sim/log.h"
-#include "sim/thread.h"
+#include "sim/strings.h"
 
 class ThreadHandler : public sim::Handler
 {
@@ -37,6 +36,7 @@ ThreadHandler::ThreadHandler(){
 
 void* ThreadHandler::_run_thread(void *arg){
 	ThreadHandler *handler = (ThreadHandler *)arg;
+	int num = 0;
 	while(1){
 		sleep(2);
 		
@@ -50,8 +50,11 @@ void* ThreadHandler::_run_thread(void *arg){
 			sim::Response *resp = new sim::Response();
 			resp->sess = it->second;
 			resp->msg.add("timer");
+			resp->msg.add(str(num));
 			handler->async_send(resp);
 		}
+
+		num ++;
 	}
 	return NULL;
 }
