@@ -82,7 +82,7 @@ std::string Message::encode() const{
 		const std::string &val = it->second;
 		buffer.append(encode_field(tag, val));
 	}
-	buffer.push_back(sim::MSG_END_BYTE);
+	buffer[buffer.size()-1] = sim::MSG_END_BYTE;
 	return buffer;
 }
 
