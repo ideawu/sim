@@ -38,7 +38,7 @@ int Decoder::parse(Message *msg){
 	if(!msg_end){
 		return 0;
 	}
-	int msg_len = msg_end - data + 1;
+	int msg_len = msg_end - key + 1;
 	int size = msg_len;
 	
 	int auto_tag = 0;
