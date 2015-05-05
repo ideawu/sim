@@ -77,6 +77,21 @@ sim::HandlerState ThreadHandler::proc(const sim::Request &req, sim::Response *re
 			resp->msg.add("error");
 			resp->msg.add("invalid token!");
 		}
+	}else if(cmd == "send"){
+		std::map<int64_t, sim::Session> sessions;
+		{
+			Locking l(&this->mutex);
+			sessions = this->sessions;
+		}
+		std::map<int64_t, sim::Session>::iterator it;
+		for(it=sessions.begin(); it!=sessions.end(); it++){
+			sim::Response *resp = new sim::Response();
+			resp->sess = it->second;
+			resp->msg = req.msg;
+			resp->msg.set_type("msg");
+			this->async_send(resp);
+		}
+		resp->msg.add("ok");
 	}else{
 		resp->msg.add("client_error");
 		resp->msg.add("unknown command!");

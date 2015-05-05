@@ -1,7 +1,7 @@
-include ../../build_config.mk
+include ../build_config.mk
 
-CFLAGS += -I../../output/include
-CLIBS  += ../../output/libsim.a
+CFLAGS += -I../output/include
+CLIBS  += ../output/libsim.a
 
 all: $(OBJS)
 	g++ -o test_msg.out $(CFLAGS) test_msg.cpp $(CLIBS)
