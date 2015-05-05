@@ -18,7 +18,7 @@ public:
 	// 如果出错(如系统错误), 返回 -1.
 	int parse(Message *msg);
 private:
-	std::string buffer_;
+	std::string buffer;
 	int buffer_offset;
 };
 

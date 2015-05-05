@@ -7,8 +7,8 @@ namespace sim{
 const static int BUF_RESIZE_TRIGGER = 16 * 1024;
 
 int Decoder::push(const char *buf, int len){
-	buffer_.append(buf, len);
-	//log_debug("'%s'", str_escape(buffer_).c_str());
+	buffer.append(buf, len);
+	//log_debug("'%s'", str_escape(buffer).c_str());
 	return len;
 }
 
@@ -17,24 +17,19 @@ int Decoder::parse(Message *msg){
 
 	if(buffer_offset >= BUF_RESIZE_TRIGGER){
 		//log_debug("resize buffer");
-		buffer_ = std::string(buffer_.data() + buffer_offset, buffer_.size() - buffer_offset);
+		buffer = std::string(buffer.data() + buffer_offset, buffer.size() - buffer_offset);
 		buffer_offset = 0;
 	}
 	
-	int data_size = buffer_.size() - buffer_offset;
-	if(data_size == 0){
+	while(buffer.size() > buffer_offset && isspace(buffer[buffer_offset])){
+		buffer_offset ++;
+	}
+	if(buffer.size() == buffer_offset){
 		return 0;
 	}
 	
-	const char *data = buffer_.data() + buffer_offset;
-	const char *key = data;
-	for(int i=0; i<data_size && isspace(data[i]); i++){
-		key ++;
-	}
-	buffer_offset += (key - data);
-	data_size -= (key - data);
-	
-	const char *msg_end = (const char *)memchr(key, sim::MSG_END_BYTE, data_size);
+	const char *key = buffer.data() + buffer_offset;
+	const char *msg_end = (const char *)memchr(key, sim::MSG_END_BYTE, buffer.size() - buffer_offset);
 	if(!msg_end){
 		return 0;
 	}
@@ -86,13 +81,8 @@ int Decoder::parse(Message *msg){
 			for(it=msg->fields_.begin(); it!=msg->fields_.end(); it++){
 				it->second = sim::decode(it->second);
 			}
-			// 如果最后一个空格被省略, 就会出现 key > msg_end, 否则 key = msg_end
-			if(key == msg_end){
-				key += 1;
-			}
 			buffer_offset += msg_len;
-			// 一个完整的报文解析结束, 从缓冲区清除已经解析了的数据
-			//log_debug("msg.len: %d, buffer.len: %d", msg_len, buffer_.size());
+			//log_debug("msg.len: %d, buffer.len: %d", msg_len, buffer.size());
 			return 1;
 		}
 	}

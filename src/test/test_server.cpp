@@ -88,7 +88,7 @@ sim::HandlerState ThreadHandler::proc(const sim::Request &req, sim::Response *re
 
 
 int main(int argc, char **argv){
-	set_log_level("info");
+	//set_log_level("info");
 	
 	const char *ip = "127.0.0.1";
 	int port = 8800;
