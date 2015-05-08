@@ -17,6 +17,7 @@ private:
 	bool noblock_;
 	bool error_;
 	Decoder decoder_;
+	Link(bool is_server=false);
 public:
 	std::string output;
 
@@ -26,7 +27,6 @@ public:
 	double create_time;
 	double active_time;
 
-	Link(bool is_server=false);
 	~Link();
 	void close();
 	void nodelay(bool enable=true);
