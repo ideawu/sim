@@ -193,16 +193,18 @@ Session* Server::get_session(int64_t sess_id){
 void Server::loop(){
 	fdes->set(serv_link->fd(), FDEVENT_IN, DEFAULT_TYPE, serv_link);
 	while(1){
-		this->loop_once();
+		if(this->loop_once() == -1){
+			break;
+		}
 	}
 }
 
-void Server::loop_once(){
+int Server::loop_once(){
 	const Fdevents::events_t *events;
 	events = fdes->wait(20);
 	if(events == NULL){
 		log_fatal("events.wait error: %s", strerror(errno));
-		return;
+		return 0;
 	}
 	
 	for(int i=0; i<(int)events->size(); i++){
@@ -240,6 +242,7 @@ void Server::loop_once(){
 			}
 		}
 	}
+	return 0;
 }
 
 }; // namespace sim
