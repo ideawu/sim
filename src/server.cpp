@@ -192,48 +192,51 @@ Session* Server::get_session(int64_t sess_id){
 
 void Server::loop(){
 	fdes->set(serv_link->fd(), FDEVENT_IN, DEFAULT_TYPE, serv_link);
-
 	while(1){
-		const Fdevents::events_t *events;
-		events = fdes->wait(20);
-		if(events == NULL){
-			log_fatal("events.wait error: %s", strerror(errno));
-			break;
-		}
-		
-		for(int i=0; i<(int)events->size(); i++){
-			const Fdevent *fde = events->at(i);
-			if(fde->data.ptr == serv_link){
-				this->accept_session();
-			}else if(fde->data.num == HANDLER_TYPE){
-				Handler *handler = (Handler *)fde->data.ptr;
-				while(Response *resp = handler->handle()){
-					Session *sess = this->get_session(resp->sess.id);
-					if(sess){
-						Link *link = sess->link;
-						link->send(resp->msg);
-						if(link && !link->output.empty()){
-							fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, sess);
-						}
-					}
-					delete resp;
-				}
-			}else{
-				Session *sess = (Session *)fde->data.ptr;
-				Link *link = sess->link;
-				if(fde->events & FDEVENT_IN){
-					if(this->read_session(sess) == -1){
-						continue;
+		this->loop_once();
+	}
+}
+
+void Server::loop_once(){
+	const Fdevents::events_t *events;
+	events = fdes->wait(20);
+	if(events == NULL){
+		log_fatal("events.wait error: %s", strerror(errno));
+		return;
+	}
+	
+	for(int i=0; i<(int)events->size(); i++){
+		const Fdevent *fde = events->at(i);
+		if(fde->data.ptr == serv_link){
+			this->accept_session();
+		}else if(fde->data.num == HANDLER_TYPE){
+			Handler *handler = (Handler *)fde->data.ptr;
+			while(Response *resp = handler->handle()){
+				Session *sess = this->get_session(resp->sess.id);
+				if(sess){
+					Link *link = sess->link;
+					link->send(resp->msg);
+					if(link && !link->output.empty()){
+						fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, sess);
 					}
 				}
-				if(fde->events & FDEVENT_OUT){
-					if(this->write_session(sess) == -1){
-						continue;
-					}
+				delete resp;
+			}
+		}else{
+			Session *sess = (Session *)fde->data.ptr;
+			Link *link = sess->link;
+			if(fde->events & FDEVENT_IN){
+				if(this->read_session(sess) == -1){
+					continue;
 				}
-				if(link && !link->output.empty()){
-					fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, sess);
+			}
+			if(fde->events & FDEVENT_OUT){
+				if(this->write_session(sess) == -1){
+					continue;
 				}
+			}
+			if(link && !link->output.empty()){
+				fdes->set(link->fd(), FDEVENT_OUT, DEFAULT_TYPE, sess);
 			}
 		}
 	}

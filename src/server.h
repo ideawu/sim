@@ -21,6 +21,7 @@ public:
 	
 	void add_handler(Handler *handler);
 	void loop();
+	void loop_once();
 	
 	//int send(int64_t sess_id, const Message &msg);
 	//int send_all(const Message &msg);
