@@ -5,9 +5,9 @@
 class MyApplication : public sim::Application
 {
 public:
-	virtual void loop_once();
+	virtual int loop_once();
 	virtual int init();
-	virtual void free();
+	virtual int free();
 };
 
 int MyApplication::init(){
@@ -15,13 +15,15 @@ int MyApplication::init(){
 	return 0;
 }
 
-void MyApplication::free(){
+int MyApplication::free(){
 	log_info("server exit.");
+	return 0;
 }
 
-void MyApplication::loop_once(){
+int MyApplication::loop_once(){
 	sleep(1);
 	log_debug("");
+	return 0;
 }
 
 int main(int argc, char **argv){

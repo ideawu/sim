@@ -24,7 +24,8 @@ int Application::init(){
 	return 0;
 }
 
-void Application::free(){
+int Application::free(){
+	return 0;
 }
 
 int Application::main(int argc, char **argv){
@@ -49,7 +50,9 @@ int Application::main(int argc, char **argv){
 	}
 	write_pid();
 	while(!quit){
-		this->loop_once();
+		if(this->loop_once() == -1){
+			break;
+		}
 	}
 	remove_pidfile();
 	this->free();

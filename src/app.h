@@ -17,8 +17,8 @@ public:
 	virtual void usage(int argc, char **argv);
 	virtual void welcome();
 	virtual int init();
-	virtual void free();
-	virtual void loop_once() = 0;
+	virtual int free();
+	virtual int loop_once() = 0;
 
 protected:
 	struct AppArgs{
