@@ -39,6 +39,7 @@ Server* Server::listen(const std::string &ip, int port){
 	
 	Server *ret = new Server();
 	ret->serv_link = serv_link;
+	ret->fdes->set(serv_link->fd(), FDEVENT_IN, DEFAULT_TYPE, serv_link);
 	return ret;
 }
 
@@ -191,7 +192,6 @@ Session* Server::get_session(int64_t sess_id){
 }
 
 void Server::loop(){
-	fdes->set(serv_link->fd(), FDEVENT_IN, DEFAULT_TYPE, serv_link);
 	while(1){
 		if(this->loop_once() == -1){
 			break;
