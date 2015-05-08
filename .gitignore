@@ -8,6 +8,7 @@ tmp
 *.swp
 *_cpy_*
 *.dSYM*
+*.pid
 build_config.mk
 output
 

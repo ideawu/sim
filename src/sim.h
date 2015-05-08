@@ -8,6 +8,9 @@
 #include "link.h"
 #include "server.h"
 #include "handler.h"
+#include "config.h"
+#include "app.h"
+
 #include "log.h"
 
 namespace sim{
