@@ -20,8 +20,11 @@ void signal_handler(int sig){
 	}
 }
 
-bool Application::running(){
-	return !quit;
+int Application::init(){
+	return 0;
+}
+
+void Application::free(){
 }
 
 int Application::main(int argc, char **argv){
@@ -32,17 +35,24 @@ int Application::main(int argc, char **argv){
 
 	welcome();
 	parse_args(argc, argv);
-	init();
+
+	my_init();
 
 	log_info("config    : %s", this->app_args.conf_file.c_str());
 	log_info("pidfile   : %s, pid: %d", app_args.pidfile.c_str(), (int)getpid());
 	log_info("log_level : %s", Logger::shared()->level_name().c_str());
 	log_info("log_output: %s", Logger::shared()->output_name().c_str());
 	log_info("log_rotate: %" PRId64, Logger::shared()->rotate_size());
-
+	
+	if(this->init() == -1){
+		return -1;
+	}
 	write_pid();
-	run();
+	while(!quit){
+		this->loop_once();
+	}
 	remove_pidfile();
+	this->free();
 	
 	delete conf;
 	return 0;
@@ -94,7 +104,7 @@ void Application::parse_args(int argc, char **argv){
 	}
 }
 
-void Application::init(){
+void Application::my_init(){
 	if(!is_file(app_args.conf_file.c_str())){
 		fprintf(stderr, "'%s' is not a file or not exists!\n", app_args.conf_file.c_str());
 		exit(1);

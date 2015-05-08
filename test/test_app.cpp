@@ -5,18 +5,23 @@
 class MyApplication : public sim::Application
 {
 public:
-	virtual void run();
+	virtual void loop_once();
+	virtual int init();
+	virtual void free();
 };
 
-void MyApplication::run(){
+int MyApplication::init(){
 	log_info("server started.");
-	
-	while(this->running()){
-		sleep(1);
-		log_debug("");
-	}
+	return 0;
+}
 
+void MyApplication::free(){
 	log_info("server exit.");
+}
+
+void MyApplication::loop_once(){
+	sleep(1);
+	log_debug("");
 }
 
 int main(int argc, char **argv){

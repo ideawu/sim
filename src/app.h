@@ -16,8 +16,9 @@ public:
 	
 	virtual void usage(int argc, char **argv);
 	virtual void welcome();
-	virtual void run() = 0;
-	bool running();
+	virtual int init();
+	virtual void free();
+	virtual void loop_once() = 0;
 
 protected:
 	struct AppArgs{
@@ -38,7 +39,7 @@ protected:
 	
 private:
 	void parse_args(int argc, char **argv);
-	void init();
+	void my_init();
 
 	int read_pid();
 	void write_pid();
