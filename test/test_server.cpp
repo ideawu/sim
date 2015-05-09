@@ -77,6 +77,17 @@ sim::HandlerState ThreadHandler::proc(const sim::Request &req, sim::Response *re
 			resp->msg.add("error");
 			resp->msg.add("invalid token!");
 		}
+	}else if(cmd == "echo"){
+		resp->msg.add("ok");
+		const std::map<int, std::string> *fields = req.msg.fields();
+		std::map<int, std::string>::const_iterator it;
+		for(it=fields->begin(); it!=fields->end(); it++){
+			int tag = it->first;
+			if(tag == 0){
+				continue;
+			}
+			resp->msg.set(tag, it->second);
+		}
 	}else if(cmd == "send"){
 		std::map<int64_t, sim::Session> sessions;
 		{

@@ -26,6 +26,9 @@ public:
 	const std::string* get(int tag) const;
 	
 	std::string encode() const;
+	const std::map<int, std::string>* fields() const{
+		return &fields_;
+	}
 
 private:
 	std::string type_;
