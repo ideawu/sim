@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "sim/sim.h"
-#include "sim/fde.h"
 
 int main(int argc, char **argv){
 	set_log_level("info");
@@ -12,10 +11,10 @@ int main(int argc, char **argv){
 		exit(0);
 	}
 
-	Fdevents *fdes;
-	fdes = new Fdevents();
+	sim::Fdevents *fdes;
+	fdes = new sim::Fdevents();
 
-	fdes->set(link->fd(), FDEVENT_IN|FDEVENT_OUT, 0, link);
+	fdes->set(link->fd(), sim::FDEVENT_IN|sim::FDEVENT_OUT, 0, link);
 	
 	sim::Message msg;
 	msg.add("ping");
@@ -34,7 +33,7 @@ int main(int argc, char **argv){
 	double stime = sim::millitime();
 
 	while(1){
-		const Fdevents::events_t *events;
+		const sim::Fdevents::events_t *events;
 		events = fdes->wait(50);
 		if(events == NULL){
 			log_error("events.wait error: %s", strerror(errno));
@@ -42,9 +41,9 @@ int main(int argc, char **argv){
 		}
 
 		for(int i=0; i<(int)events->size(); i++){
-			const Fdevent *fde = events->at(i);
+			const sim::Fdevent *fde = events->at(i);
 			sim::Link *link = (sim::Link *)fde->data.ptr;
-			if(fde->events & FDEVENT_IN){
+			if(fde->readable()){
 				int ret;
 				ret = link->read();
 				log_debug("read %d", ret);
@@ -77,7 +76,7 @@ int main(int argc, char **argv){
 					}
 				}
 			}
-			if(fde->events & FDEVENT_OUT){
+			if(fde->writable()){
 				sent_reqs ++;
 				if(sent_reqs <= total_reqs){
 					//log_debug("send %d", sent_reqs);
@@ -91,7 +90,7 @@ int main(int argc, char **argv){
 					double ts = etime - stime;
 					int qps = total_reqs / ts;
 					log_info("sent all, time: %.2f s, %d qps", 1000*ts, qps);
-					fdes->clr(link->fd(), FDEVENT_OUT);
+					fdes->clr(link->fd(), sim::FDEVENT_OUT);
 				}
 				link->write();
 				//log_debug("write %d", ret);

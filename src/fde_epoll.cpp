@@ -6,6 +6,8 @@ found in the LICENSE file.
 #ifndef UTIL_FDE_EPOLL_H
 #define UTIL_FDE_EPOLL_H
 
+namespace sim{
+
 Fdevents::Fdevents(){
 	ep_fd = epoll_create(1024);
 }
@@ -112,6 +114,9 @@ const Fdevents::events_t* Fdevents::wait(int timeout_ms){
 	}
 	return &ready_events;
 }
+
+
+}; // namespace sim
 
 #endif
 

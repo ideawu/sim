@@ -5,6 +5,7 @@
 #include <string>
 #include "message.h"
 #include "decoder.h"
+#include "fde.h"
 #include "link.h"
 #include "server.h"
 #include "handler.h"

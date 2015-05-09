@@ -109,7 +109,7 @@ int main(int argc, char **argv){
 	int port = 8800;
 	sim::Server *serv = sim::Server::listen(ip, port);
 	if(!serv){
-		log_fatal("");
+		log_fatal("%s", strerror(errno));
 		exit(0);
 	}
 	log_info("server listen on %s:%d", ip, port);

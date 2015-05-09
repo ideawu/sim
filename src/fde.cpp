@@ -6,6 +6,8 @@ found in the LICENSE file.
 #include <unistd.h>
 #include "fde.h"
 
+namespace sim{
+
 struct Fdevent* Fdevents::get_fde(int fd){
 	while((int)events.size() <= fd){
 		struct Fdevent *fde = new Fdevent();
@@ -17,6 +19,8 @@ struct Fdevent* Fdevents::get_fde(int fd){
 	}
 	return events[fd];
 }
+
+}; // namespace sim
 
 
 #ifdef HAVE_EPOLL

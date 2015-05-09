@@ -6,6 +6,8 @@ found in the LICENSE file.
 #ifndef UTIL_FDE_SELECT_H
 #define UTIL_FDE_SELECT_H
 
+namespace sim{
+
 Fdevents::Fdevents(){
 	maxfd = -1;
 	FD_ZERO(&readset);
@@ -113,5 +115,8 @@ const Fdevents::events_t* Fdevents::wait(int timeout_ms){
 
 	return &ready_events;
 }
+
+
+}; // namespace sim
 
 #endif

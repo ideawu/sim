@@ -7,9 +7,9 @@
 #include "link.h"
 #include "handler.h"
 
-class Fdevents;
-
 namespace sim{
+
+class Fdevents;
 
 class Server
 {
