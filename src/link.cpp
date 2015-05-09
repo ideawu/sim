@@ -4,8 +4,8 @@
 #include <string.h>
 #include <stdarg.h>
 #include <sys/socket.h>
+#include "util/log.h"
 #include "link.h"
-#include "log.h"
 
 namespace sim{
 

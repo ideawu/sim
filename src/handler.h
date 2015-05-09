@@ -3,7 +3,7 @@
 
 #include "link.h"
 #include "message.h"
-#include "thread.h"
+#include "util/thread.h"
 
 namespace sim{
 

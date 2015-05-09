@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "sim/sim.h"
-#include "sim/log.h"
 #include "sim/fde.h"
 
 int main(int argc, char **argv){

@@ -3,9 +3,9 @@
 #include <signal.h>
 #include <time.h>
 #include <sys/time.h>
+#include "util/log.h"
 #include "sim.h"
 #include "fde.h"
-#include "log.h"
 #include "server.h"
 
 namespace sim{

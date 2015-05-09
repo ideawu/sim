@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "sim/sim.h"
-#include "sim/strings.h"
+#include "sim/util/strings.h"
 
 class ThreadHandler : public sim::Handler
 {

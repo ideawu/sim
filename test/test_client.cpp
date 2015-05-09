@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "sim/sim.h"
-#include "sim/log.h"
-#include "sim/fde.h"
 
 int main(int argc, char **argv){
 	sim::Link *link = sim::Link::connect("127.0.0.1", 8800);

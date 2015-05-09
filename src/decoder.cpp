@@ -1,6 +1,6 @@
-#include "strings.h"
+#include "util/strings.h"
+#include "util/log.h"
 #include "sim.h"
-#include "log.h"
 
 namespace sim{
 
