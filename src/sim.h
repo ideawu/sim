@@ -28,7 +28,7 @@ double millitime(){
 	return ret;
 }
 
-std::string encode(const std::string s);
+std::string encode(const std::string s, bool force_ascii=false);
 std::string decode(const std::string s);
 
 }; // namespace sim

@@ -8,6 +8,42 @@
 #include "fde.h"
 #include "server.h"
 
+#include "util/strings.h"
+
+static std::string msg_str(const sim::Message &msg){
+	std::string ret;
+	const std::map<int, std::string> *fields = msg.fields();
+	std::map<int, std::string>::const_iterator it;
+	char buf[50];
+	int count = 0;
+	for(it=fields->begin(); it!=fields->end(); it++){
+		if(ret.size() > 100){
+			snprintf(buf, sizeof(buf), "[%d more...]", (int)fields->size() - count);
+			ret.append(buf);
+			break;
+		}
+		
+		int tag = it->first;
+		const std::string &val = it->second;
+		ret.append(str(tag));
+		ret.push_back('=');
+		if(val.size() < 30){
+			std::string h = sim::encode(val, true);
+			ret.append(h);
+		}else{
+			sprintf(buf, "[%d]", (int)val.size());
+			ret.append(buf);
+		}
+		
+		count ++;
+		if(count != (int)fields->size()){
+			ret.push_back(' ');
+		}
+	}
+	return ret;
+}
+
+
 namespace sim{
 	
 const static int DEFAULT_TYPE = 0;
@@ -100,14 +136,6 @@ int Server::close_session(Session *sess){
 	delete link;
 	delete sess;
 	return 0;
-}
-
-static std::string msg_str(const Message &msg){
-	std::string s = msg.encode();
-	if(!s.empty()){
-		s[s.size() - 1] = '\0';
-	}
-	return s;
 }
 
 int Server::read_session(Session *sess){

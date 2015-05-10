@@ -7,7 +7,7 @@ std::string version(){
 	return "1.0";
 }
 
-std::string encode(const std::string s){
+std::string encode(const std::string s, bool force_ascii){
 	std::string ret;
 	int size = (int)s.size();
 	for(int i=0; i<size; i++){
@@ -44,19 +44,20 @@ std::string encode(const std::string s){
 				ret.append("\\0");
 				break;
 			default:
-				ret.push_back(c);
-				// TODO: 对非 UTF-8 字符进行转义
-				/*
-				static const char *hex = "0123456789abcdef";
-				if(c >= '!' && c <= '~'){
+				if(!force_ascii){
 					ret.push_back(c);
 				}else{
-					ret.append("\\x");
-					unsigned char d = c;
-					ret.push_back(hex[d >> 4]);
-					ret.push_back(hex[d & 0x0f]);
+					// TODO: 只对非 UTF-8 字符进行转义
+					static const char *hex = "0123456789abcdef";
+					if(c >= '!' && c <= '~'){
+						ret.push_back(c);
+					}else{
+						ret.append("\\x");
+						unsigned char d = c;
+						ret.push_back(hex[d >> 4]);
+						ret.push_back(hex[d & 0x0f]);
+					}
 				}
-				*/
 				break;
 		}
 	}
