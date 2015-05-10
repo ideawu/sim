@@ -18,7 +18,7 @@ class SimTimeoutException extends SimException
 
 class SimClient
 {
-	private $debug = true;
+	private $debug = false;
 	public $sock = null;
 	private $_closed = false;
 	private $recv_buf = '';
