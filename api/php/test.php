@@ -9,6 +9,13 @@ $req = array(
 	'echo',
 	'你好',
 	'hello world!',
+	'[hi]',
+	array(
+		'a',
+		'中',
+		'国',
+		'b',
+	),
 );
 $sim->send($req);
 $resp = $sim->recv();

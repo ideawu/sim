@@ -18,7 +18,7 @@ class SimTimeoutException extends SimException
 
 class SimClient
 {
-	private $debug = false;
+	private $debug = true;
 	public $sock = null;
 	private $_closed = false;
 	private $recv_buf = '';
@@ -53,13 +53,11 @@ class SimClient
 	}
 
 	function send($data){
-		$ps = array();
-		foreach($data as $k=>$v){
-			$k = intval($k);
-			$v = self::encode($v);
-			$ps[] = "$k=$v ";
+		if(is_array($data)){
+			$s = self::encode_msg($data);
+		}else{
+			$s = $data;
 		}
-		$s = join(' ', $ps) . "\n";
 		if($this->debug){
 			echo '> ' . str_replace(array("\r", "\n"), array('\r', '\n'), $s) . "\n";
 		}
@@ -117,24 +115,7 @@ class SimClient
 		}
 		$line = substr($this->recv_buf, 0, $msg_end + 1);
 		$this->recv_buf = substr($this->recv_buf, $msg_end + 1);
-		
-		$ret = array();
-		$auto_tag = 0;
-		$line = trim($line);
-		$kvs = explode(' ', $line);
-		foreach($kvs as $kv){
-			$ps = explode('=', $kv, 2);
-			if(count($ps) == 1){
-				$tag = $auto_tag;
-				$val = $ps[0];
-			}else{
-				$tag = intval($ps[0]);
-				$val = $ps[1];
-			}
-			$auto_tag = $tag + 1;
-			$val = self::decode($val);
-			$ret[$tag] = $val;
-		}
+		return $this->decode_msg($line);
 		/*
 		// TODO:
 		if(isset($ret[SIM_LIST_TAG])){
@@ -150,7 +131,54 @@ class SimClient
 		return $ret;
 	}
 	
-	static function encode($str){
+	static function decode_msg($line){
+		$line = trim($line);
+		$ret = array();
+		$auto_tag = 0;
+		$kvs = explode(' ', $line);
+		foreach($kvs as $kv){
+			$ps = explode('=', $kv, 2);
+			if(count($ps) == 1){
+				$tag = $auto_tag;
+				$val = $ps[0];
+			}else{
+				$tag = intval($ps[0]);
+				$val = $ps[1];
+			}
+			$auto_tag = $tag + 1;
+			$val = self::decode($val);
+			$ret[$tag] = $val;
+		}
+		return $ret;
+	}
+
+	static function encode_msg($data){
+		$ps = array();
+		foreach($data as $k=>$v){
+			$k = intval($k);
+			if(is_array($v)){
+				$v = self::encode_msg($v);
+				$v = self::encode($v);
+			}else{
+				$v = self::encode($v);
+			}
+			$ps[] = "$k=$v";
+		}
+		$s = join(' ', $ps) . "\n";
+		return $s;
+	}
+		
+	static function encode($data){
+		static $min_c = 0;
+		if($min_c == 0){
+			$min_c = ord('!');
+		}
+		static $max_c = 0;
+		if($max_c == 0){
+			$max_c = ord('~');
+		}
+		
+		$str = $data;
 		$ret = '';
 		$len = strlen($str);
 		for($i=0; $i<$len; $i++){
@@ -158,6 +186,9 @@ class SimClient
 			switch($c){
 				case ' ':
 					$ret .= '\\s';
+					break;
+				case "\\":
+					$ret .= "\\\\";
 					break;
 				case "\a":
 					$ret .= "\\a";
@@ -180,22 +211,21 @@ class SimClient
 				case "\t":
 					$ret .= "\\t";
 					break;
+				case "\0":
+					$ret .= "\\0";
+					break;
 				default:
+					$ret .= $c;
+					// TODO: 对非 UTF-8 字符进行转义
+					/*
 					$ord = ord($c);
-					static $min_c = 0;
-					if($min_c == 0){
-						$min_c = ord('!');
-					}
-					static $max_c = 0;
-					if($max_c == 0){
-						$max_c = ord('~');
-					}
 					if($ord >= $min_c && $ord <= $max_c){
 						$ret .= $c;
 					}else{
 						$ret .= "\\x";
 						$ret .= sprintf('%02x', $ord);
 					}
+					*/
 					break;
 			}
 		}
@@ -211,11 +241,16 @@ class SimClient
 				$ret .= $c;
 				continue;
 			}
-			$i++;
-			$c = $str[$i];
-			switch($c){
+			if($i >= $len - 1){
+				break;
+			}
+			$c2 = $str[++$i];
+			switch($c2){
 				case 's':
 					$ret .= ' ';
+					break;
+				case '\\':
+					$ret .= "\\";
 					break;
 				case 'a':
 					$ret .= "\a";
@@ -238,8 +273,8 @@ class SimClient
 				case 't':
 					$ret .= "\t";
 					break;
-				case '\\':
-					$ret .= "\\";
+				case '0':
+					$ret .= "\0";
 					break;
 				case 'x':
 					$hex = substr($str, $i+1, 2);
@@ -247,7 +282,7 @@ class SimClient
 					$i += 2;
 					break;
 				default:
-					$ret .= $c;
+					$ret .= $c2;
 					break;
 			}
 		}
