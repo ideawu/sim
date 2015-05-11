@@ -8,14 +8,15 @@ found in the LICENSE file.
 
 #include <errno.h>
 #include <vector>
+
+#ifdef __linux__
+	#define HAVE_EPOLL 1
+#endif
+
 #ifdef HAVE_EPOLL
 	#include <sys/epoll.h>
 #else
 	#include <sys/select.h>
-#endif
-
-#ifdef __linux__
-	#define HAVE_EPOLL 1
 #endif
 
 /*
