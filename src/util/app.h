@@ -1,5 +1,5 @@
-#ifndef UTIL_APP_H
-#define UTIL_APP_H
+#ifndef SIM_UTIL_APP_H
+#define SIM_UTIL_APP_H
 
 #include <string>
 

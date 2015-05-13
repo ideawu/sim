@@ -59,6 +59,7 @@ Server::Server(){
 Server::~Server(){
 	for(int i=0; i<this->handlers.size(); i++){
 		Handler *handler = this->handlers[i];
+		handler->m_free();
 		delete handler;
 	}
 	this->handlers.clear();
@@ -80,6 +81,7 @@ Server* Server::listen(const std::string &ip, int port){
 }
 
 void Server::add_handler(Handler *handler){
+	handler->m_init();
 	this->handlers.push_back(handler);
 	if(handler->fd() > 0){
 		fdes->set(handler->fd(), FDEVENT_IN, HANDLER_TYPE, handler);

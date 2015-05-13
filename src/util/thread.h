@@ -3,8 +3,8 @@ Copyright (c) 2012-2014 The SSDB Authors. All rights reserved.
 Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 */
-#ifndef UTIL_THREAD_H_
-#define UTIL_THREAD_H_
+#ifndef SIM_UTIL_THREAD_H_
+#define SIM_UTIL_THREAD_H_
 
 #include <unistd.h>
 #include <stdio.h>
@@ -14,7 +14,6 @@ found in the LICENSE file.
 #include <pthread.h>
 #include <queue>
 #include <vector>
-#include <list>
 
 class Mutex{
 private:
@@ -58,7 +57,7 @@ private:
 	int fds[2];
 public:
 	Mutex mutex;
-	std::list<T> items;
+	std::queue<T> items;
 
 	SelectableQueue();
 	~SelectableQueue();
@@ -95,7 +94,7 @@ int SelectableQueue<T>::size(){
 template <class T>
 int SelectableQueue<T>::push(const T item){
 	Locking l(&mutex);
-	items.push_back(item);
+	items.push(item);
 	if(::write(fds[1], "1", 1) == -1){
 		exit(0);
 	}
@@ -124,7 +123,7 @@ int SelectableQueue<T>::pop(T *data){
 				return -1;
 			}
 			*data = items.front();
-			items.pop_front();
+			items.pop();
 		}
 		break;
 	}

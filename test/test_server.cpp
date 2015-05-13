@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "sim/sim.h"
 #include "sim/util/strings.h"
+#include "sim/util/thread.h"
 
 class ThreadHandler : public sim::Handler
 {
