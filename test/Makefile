@@ -10,6 +10,7 @@ all: $(OBJS)
 	g++ -o test_client.out $(CFLAGS) test_client.cpp $(CLIBS)
 	g++ -o bench_client.out $(CFLAGS) bench_client.cpp $(CLIBS)
 	g++ -o test_app.out $(CFLAGS) test_app.cpp $(CLIBS)
+	g++ -o simple_server.out $(CFLAGS) simple_server.cpp $(CLIBS)
 
 clean:
 	rm -rf *.o *.a *.out
