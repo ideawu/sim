@@ -30,7 +30,7 @@ int main(int argc, char **argv){
 	int sent_reqs = 0;
 	int recv_reqs = 0;
 	
-	double stime = sim::millitime();
+	double stime = sim::microtime();
 
 	while(1){
 		const sim::Fdevents::events_t *events;
@@ -68,7 +68,7 @@ int main(int argc, char **argv){
 					}
 					//printf("recv: %s", msg.encode().c_str());
 					if(recv_reqs == total_reqs){
-						double etime = sim::millitime();
+						double etime = sim::microtime();
 						double ts = etime - stime;
 						int qps = total_reqs / ts;
 						log_info("recv all, time: %.2f ms, %d qps", 1000*ts, qps);
@@ -86,7 +86,7 @@ int main(int argc, char **argv){
 					}
 				}
 				if(link->output.empty()){
-					double etime = sim::millitime();
+					double etime = sim::microtime();
 					double ts = etime - stime;
 					int qps = total_reqs / ts;
 					log_info("sent all, time: %.2f s, %d qps", 1000*ts, qps);

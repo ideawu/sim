@@ -97,7 +97,7 @@ Session* Server::accept_session(){
 				
 	link->nodelay();
 	link->noblock();
-	link->create_time = millitime();
+	link->create_time = microtime();
 	link->active_time = link->create_time;
 	
 	Session *sess = new Session();
@@ -163,15 +163,15 @@ int Server::read_session(Session *sess){
 			// 报文未就绪, 继续读网络
 			break;
 		}
-		req.stime = millitime();
+		req.stime = microtime();
 		req.sess = *sess;
 
 		Response resp;
 		for(int i=0; i<this->handlers.size(); i++){
 			Handler *handler = this->handlers[i];
-			req.time_wait = 1000 * (millitime() - req.stime);
+			req.time_wait = 1000 * (microtime() - req.stime);
 			HandlerState state = handler->proc(req, &resp);
-			req.time_proc = 1000 * (millitime() - req.stime) - req.time_wait;
+			req.time_proc = 1000 * (microtime() - req.stime) - req.time_wait;
 			if(state == HANDLE_RESP){
 				link->send(resp.msg);
 				if(link && !link->output.empty()){

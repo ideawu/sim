@@ -21,7 +21,7 @@ const static char MSG_END_BYTE = '\n';
 
 
 inline static
-double millitime(){
+double microtime(){
 	struct timeval now;
 	gettimeofday(&now, NULL);
 	double ret = now.tv_sec + now.tv_usec/1000.0/1000.0;
