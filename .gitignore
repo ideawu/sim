@@ -11,5 +11,6 @@ tmp
 *.pid
 build_config.mk
 output
+src/client/demo
 
 
