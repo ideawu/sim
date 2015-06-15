@@ -210,6 +210,39 @@ class SimClient
 	function closed(){
 		return $this->_closed;
 	}
+	
+	private $batch_reqs = null;
+
+	function batch(){
+		$this->batch_reqs = array();
+	}
+	
+	function exec(){
+		if(!is_array($this->batch_reqs)){
+			return array();
+		}
+		$ret = array();
+		foreach($this->batch_reqs as $req){
+			$this->send($req);
+		}
+		foreach($this->batch_reqs as $req){
+			$resp = $this->recv();
+			$ret[] = $resp;
+		}
+		$this->batch_reqs = null;
+		return $ret;
+	}
+	
+	function request($req){
+		if(is_array($this->batch_reqs)){
+			$this->batch_reqs[] = $req;
+		}else{
+			$this->send($req);
+			$resp = $this->recv();
+			return $resp;
+		}
+		return true;
+	}
 
 	function send($data){
 		if(is_array($data)){
