@@ -18,6 +18,8 @@ private:
 	bool error_;
 	Decoder decoder_;
 	Link(bool is_server=false);
+	
+	// TODO: max_recv_buf_size, max_send_buf_size
 public:
 	std::string output;
 

@@ -18,6 +18,7 @@ public:
 	// 如果出错(如系统错误), 返回 -1.
 	int parse(Message *msg);
 private:
+	// TODO: 优化成 ring buffer, 直接从 socket 里读
 	std::string buffer;
 	int buffer_offset;
 };
