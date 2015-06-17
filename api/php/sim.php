@@ -47,6 +47,9 @@ function sim_decode($line){
 }
 
 function sim_escape($str){
+	if(!is_string($str)){
+		$str .= '';
+	}
 	static $min_c = 0;
 	if($min_c == 0){
 		$min_c = ord('!');
@@ -110,6 +113,9 @@ function sim_escape($str){
 }
 
 function sim_unescape($str){
+	if(!is_string($str)){
+		$str .= '';
+	}
 	$ret = '';
 	$len = strlen($str);
 	for($i=0; $i<$len; $i++){
@@ -233,7 +239,17 @@ class SimClient
 		return $ret;
 	}
 	
-	function request($req){
+	function request($arg1){
+		$req = array();
+		$args = func_get_args();
+		foreach($args as $index=>$arg){
+			if(is_array($arg)){
+				$req = array_merge($req, $arg);
+			}else{
+				$req[] = $arg.'';
+			}
+		}
+		
 		if(is_array($this->batch_reqs)){
 			$this->batch_reqs[] = $req;
 		}else{
