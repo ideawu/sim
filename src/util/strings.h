@@ -79,7 +79,7 @@ std::string real_dirname(const char *filepath){
 		char *p = getcwd(buf, sizeof(buf));
 		if(p != NULL){
 			dir.append(p);
-            dir.append("/");
+			dir.append("/");
 		}
 	}
 
