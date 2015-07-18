@@ -114,6 +114,9 @@ std::string decode(const std::string s){
 			case 't':
 				ret.push_back('\t');
 				break;
+			case '0':
+				ret.push_back('\0');
+				break;
 			case 'x':
 				if(i < size - 2){
 					char c3 = s[++i];
