@@ -50,6 +50,12 @@ function sim_escape($str){
 	if(!is_string($str)){
 		$str .= '';
 	}
+	if(1){
+		$str = addcslashes($str, "\t\r\n\x07\x08\x0b\x0c\\");
+		$str = str_replace(array("\0", ' '), array("\\0", '\s'), $str);
+		return $str;
+	}
+	// 后面的代码不使用了
 	static $min_c = 0;
 	if($min_c == 0){
 		$min_c = ord('!');
@@ -70,16 +76,16 @@ function sim_escape($str){
 			case "\\":
 				$ret .= "\\\\";
 				break;
-			case "\a":
+			case "\x07": // \a
 				$ret .= "\\a";
 				break;
-			case "\b":
+			case "\x08": // \b
 				$ret .= "\\b";
 				break;
-			case "\f":
+			case "\x0c": // \f
 				$ret .= "\\f";
 				break;
-			case "\v":
+			case "\x0b": // \v
 				$ret .= "\\v";
 				break;
 			case "\r":
@@ -116,6 +122,11 @@ function sim_unescape($str){
 	if(!is_string($str)){
 		$str .= '';
 	}
+	if(1){
+		// 不确定是否将 \s 转成空格, 所以不能使用 stripcslashes()
+		#$str = stripcslashes($str);
+		#return $str;
+	}
 	$ret = '';
 	$len = strlen($str);
 	for($i=0; $i<$len; $i++){
@@ -136,16 +147,16 @@ function sim_unescape($str){
 				$ret .= "\\";
 				break;
 			case 'a':
-				$ret .= "\a";
+				$ret .= "\x07";
 				break;
 			case 'b':
-				$ret .= "\b";
+				$ret .= "\x08";
 				break;
 			case 'f':
-				$ret .= "\f";
+				$ret .= "\x0c";
 				break;
 			case 'v':
-				$ret .= "\v";
+				$ret .= "\x0b";
 				break;
 			case 'r':
 				$ret .= "\r";
