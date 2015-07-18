@@ -8,7 +8,7 @@ $sim = new SimClient($ip, $port, -1);
 $req = array(
 	'echo',
 	'你好',
-	'hello world!',
+	"hello world!",
 	'[hi]',
 	array(
 		'a',
@@ -17,9 +17,6 @@ $req = array(
 		'b',
 	),
 );
-$sim->send($req);
-$resp = $sim->recv();
-var_dump($resp);
 
 $total = 10000;
 $stime = microtime(1);
@@ -30,6 +27,15 @@ $speed = $total / (microtime(1) - $stime);
 printf("encode speed: %d /s\n", $speed);
 
 
+$s = sim_encode($req);
+$stime = microtime(1);
+for($i=0; $i<$total; $i++){
+	$req = sim_decode($s);
+}
+$speed = $total / (microtime(1) - $stime);
+printf("decode speed: %d /s\n", $speed);
+
+
 $total = 10000;
 $stime = microtime(1);
 for($i=0; $i<$total; $i++){
@@ -37,5 +43,8 @@ for($i=0; $i<$total; $i++){
 	$resp = $sim->recv();
 }
 $speed = $total / (microtime(1) - $stime);
-printf("speed: %d qps\n", $speed);
+printf("request speed: %d qps\n", $speed);
 
+
+echo sim_encode($req) . "";
+echo sim_encode($resp) . "";
