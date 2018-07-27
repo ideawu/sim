@@ -1,3 +1,6 @@
+#ifndef SIM_BUFFER_H
+#define SIM_BUFFER_H
+
 class Buffer
 {
 public:
@@ -8,10 +11,12 @@ public:
 	char* data();
 	
 	int remove(int count);
-	int append(char *buf, int len);
+	int append(const char *buf, int len);
 	
 private:
 	int _size;
 	char *_buf;
 	int _capacity;
 };
+
+#endif
