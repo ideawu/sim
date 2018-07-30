@@ -14,6 +14,8 @@ found in the LICENSE file.
 #include <pthread.h>
 #include <queue>
 #include <vector>
+#include <time.h>
+#include <sys/time.h>
 
 class Mutex{
 private:
@@ -84,19 +86,19 @@ public:
 // Thread safe queue
 template <class T>
 class Queue{
-	private:
-		pthread_cond_t cond;
-		pthread_mutex_t mutex;
-		std::queue<T> items;
-	public:
-		Queue();
-		~Queue();
+private:
+	pthread_cond_t cond;
+	pthread_mutex_t mutex;
+	std::queue<T> items;
+public:
+	Queue();
+	~Queue();
 
-		bool empty();
-		int size();
-		int push(const T item);
-		// TODO: with timeout
-		int pop(T *data);
+	bool empty();
+	int size();
+	int push(const T item);
+	int pop(T *data);
+	int pop(T *data, int timeout_ms);
 };
 
 template <class T>
@@ -152,7 +154,7 @@ int Queue<T>::pop(T *data){
 		return -1;
 	}
 	{
-		// 必须放在循环中, 因为 pthread_cond_wait 可能抢不到锁而被其它处理了
+		// 必须放在循环中, 因为 pthread_cond_wait 可能被中断
 		while(items.empty()){
 			//fprintf(stderr, "%d wait\n", pthread_self());
 			if(pthread_cond_wait(&cond, &mutex) != 0){
@@ -171,6 +173,46 @@ int Queue<T>::pop(T *data){
 	}
 		//fprintf(stderr, "%d wait end 2, job: %d\n", pthread_self(), (int)*data);
 	return 1;
+}
+
+template <class T>
+int Queue<T>::pop(T *data, int timeout_ms){
+	int ret = 0;
+
+	if(pthread_mutex_lock(&mutex) != 0){
+		return -1;
+	}
+	{
+		while(1){
+		    struct timeval now;
+		    gettimeofday(&now, NULL);
+
+			struct timespec tv;
+			tv.tv_sec = now.tv_sec + (timeout_ms / 1000);
+			tv.tv_nsec = (now.tv_usec + timeout_ms * 1000) * 1000;
+		    tv.tv_sec += tv.tv_nsec / (1000 * 1000 * 1000);
+		    tv.tv_nsec %= (1000 * 1000 * 1000);
+			
+			int r = pthread_cond_timedwait(&cond, &mutex, &tv);
+			if(r == ETIMEDOUT){
+				ret = 0;
+				break;
+			}else if(r == 0){
+				ret = 1;
+				if(!items.empty()){
+					*data = items.front();
+					items.pop();
+					break;
+				}
+			}
+		}
+	}
+	if(pthread_mutex_unlock(&mutex) != 0){
+		//fprintf(stderr, "error!\n");
+		return -1;
+	}
+		//fprintf(stderr, "%d wait end 2, job: %d\n", pthread_self(), (int)*data);
+	return ret;
 }
 
 // Selectable queue, multi writers, single reader

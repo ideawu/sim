@@ -9,7 +9,10 @@
 
 // namespace sim{
 
+static int id_incr = 1;
+
 TcpLink::TcpLink(bool is_server){
+	_id = id_incr++;
 	sock = -1;
 	noblock_ = false;
 	remote_ip[0] = '\0';
@@ -20,6 +23,10 @@ TcpLink::TcpLink(bool is_server){
 TcpLink::~TcpLink(){
 	this->close();
 	delete _buffer;
+}
+
+int TcpLink::id() const{
+	return _id;
 }
 
 int TcpLink::fd() const{

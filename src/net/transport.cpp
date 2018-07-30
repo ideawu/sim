@@ -7,18 +7,11 @@ Transport::Transport(){
 Transport::~Transport(){
 }
 
-// TcpLink* Transport::wait(){
-// 	// while(1){
-// 	// 	_signal.wait();
-// 	// 	Locking l(&_mutex);
-// 	//
-// 	// 	if(!_waiting_links.empty()){
-// 	// 		TcpLink *link = _waiting_links.front();
-// 	// 		_waiting_links.pop_front();
-// 	// 		return link;
-// 	// 	}
-// 	// }
-// }
+LinkEvent Transport::wait(int timeout_ms){
+	LinkEvent event;
+	_events.pop(&event, timeout_ms);
+	return event;
+}
 
 void Transport::accept(int id){
 	this->_accept_ids.push(id);
@@ -54,6 +47,8 @@ void Transport::handle_close_link(TcpLink *link){
 	_closing_links[id] = link;
 
 	this->_events.push(LinkEvent::close_link(link));
+
+	_fdes->del(link->fd());
 }
 
 void Transport::handle_accept_id(){

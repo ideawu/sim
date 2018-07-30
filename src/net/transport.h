@@ -13,7 +13,7 @@ class LinkEvent
 {
 public:
 	LinkEvent(){
-		_status = 0;
+		_status = -1;
 	}
 	LinkEvent(int id, int status){
 		_id = id;
@@ -22,6 +22,9 @@ public:
 	
 	int id() const{
 		return _id;
+	}
+	bool is_none() const{
+		return _status == -1;
 	}
 	bool is_new() const{
 		return _status == 0;
@@ -32,7 +35,6 @@ public:
 	bool is_read() const{
 		return _status == 2;
 	}
-	
 	static LinkEvent new_link(TcpLink *link){
 		return LinkEvent(link->id(), 0);
 	}
@@ -55,7 +57,7 @@ public:
 	Transport();
 	~Transport();
 	
-	LinkEvent wait();
+	LinkEvent wait(int timeout_ms);
 	
 	void accept(int id);
 	void close(int id);
