@@ -53,6 +53,8 @@ int Fdevents::del(int fd){
 	FD_CLR(fd, &writeset);
 
 	struct Fdevent *fde = get_fde(fd);
+	fde->data.num = 0;
+	fde->data.ptr = NULL;
 	fde->s_flags = FDEVENT_NONE;
 	while(maxfd >= 0 && this->events[maxfd]->s_flags == 0){
 		maxfd --;

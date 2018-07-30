@@ -1,28 +1,5 @@
 #include "transport.h"
 #include "util/log.h"
-#include "fde.h"
-#include "tcp_socket.h"
-
-using namespace sim;
-
-// #define TICK_INTERVAL          100 // ms
-// volatile bool quit = false;
-// volatile uint32_t g_ticks = 0;
-//
-// void signal_handler(int sig){
-// 	switch(sig){
-// 		case SIGTERM:
-// 		case SIGINT:{
-// 			quit = true;
-// 			break;
-// 		}
-// 		case SIGALRM:{
-// 			g_ticks ++;
-// 			break;
-// 		}
-// 	}
-// }
-
 
 Transport::Transport(){
 }
@@ -30,34 +7,86 @@ Transport::Transport(){
 Transport::~Transport(){
 }
 
-// Link* Transport::listen(){
+// TcpLink* Transport::wait(){
 // 	// while(1){
-// 	// 	// _signal.wait();
-// 	// 	// Locking l(&_mutex);
+// 	// 	_signal.wait();
+// 	// 	Locking l(&_mutex);
 // 	//
 // 	// 	if(!_waiting_links.empty()){
-// 	// 		Link *link = _waiting_links.front();
+// 	// 		TcpLink *link = _waiting_links.front();
 // 	// 		_waiting_links.pop_front();
 // 	// 		return link;
 // 	// 	}
 // 	// }
 // }
-//
-// void Transport::accept(Link *link){
-// 	// Locking l(&_mutex);
-//
-// 	// _working_links.insert(link);
-// 	// link->accept();
-// }
-//
-// void Transport::close(Link *link){
-// 	// Locking l(&_mutex);
-//
-// 	// _working_links.erase(link);
-// 	// link->close();
-// }
+
+void Transport::accept(int id){
+	this->_accept_ids.push(id);
+}
+
+void Transport::close(int id){
+	this->_close_ids.push(id);
+	
+	Locking l(&_mutex);
+	if(_working_links.find(id) != _working_links.end()){
+		TcpLink *link = _working_links[id];
+		_working_links.erase(id);
+		_closing_links[id] = link;
+	}
+}
+
+void Transport::handle_new_link(TcpLink *link){
+	log_debug("new link from %s:%d, fd: %d", link->remote_ip, link->remote_port, link->fd());
+
+	Locking l(&_mutex);
+	int id = link->id();
+	_working_links[id] = link;
+
+	this->_events.push(LinkEvent::new_link(link));
+}
+
+void Transport::handle_close_link(TcpLink *link){
+	log_debug("closing link %s:%d", link->remote_ip, link->remote_port);
+
+	Locking l(&_mutex);
+	int id = link->id();
+	_working_links.erase(id);
+	_closing_links[id] = link;
+
+	this->_events.push(LinkEvent::close_link(link));
+}
+
+void Transport::handle_accept_id(){
+	int id;
+	_accept_ids.pop(&id);
+	
+	Locking l(&_mutex);
+	if(_working_links.find(id) != _working_links.end()){
+		TcpLink *link = _working_links[id];
+		_fdes->set(link->fd(), FDEVENT_IN, 1, link);
+	}
+}
+
+void Transport::handle_close_id(){
+	int id;
+	_close_ids.pop(&id);
+
+	Locking l(&_mutex);
+	if(_closing_links.find(id) != _closing_links.end()){
+		TcpLink *link = _closing_links[id];
+		_closing_links.erase(id);
+	
+		_fdes->del(link->fd());
+		delete link;
+	}
+}
 
 void Transport::setup(){
+	_fdes = new Fdevents();
+	
+	_fdes->set(_accept_ids.fd(), FDEVENT_IN, 0, &_accept_ids);
+	_fdes->set(_close_ids.fd(), FDEVENT_IN, 0, &_close_ids);
+
 	pthread_t tid;
 	int err = pthread_create(&tid, NULL, &Transport::run, this);
 	if(err != 0){
@@ -66,52 +95,45 @@ void Transport::setup(){
 }
 
 void* Transport::run(void *arg){
-// 	Transport *trans = (Transport *)arg;
-// 	signal(SIGPIPE, SIG_IGN);
-// 	signal(SIGINT, signal_handler);
-// 	signal(SIGTERM, signal_handler);
-// #ifndef __CYGWIN__
-// 	signal(SIGALRM, signal_handler);
-// 	{
-// 		struct itimerval tv;
-// 		tv.it_interval.tv_sec = (TICK_INTERVAL / 1000);
-// 		tv.it_interval.tv_usec = (TICK_INTERVAL % 1000) * 1000;
-// 		tv.it_value.tv_sec = 1;
-// 		tv.it_value.tv_usec = 0;
-// 		setitimer(ITIMER_REAL, &tv, NULL);
-// 	}
-// #endif
-	
-	Fdevents *fdes;
+	Transport *trans = (Transport *)arg;
 	const Fdevents::events_t *events;
-	fdes = new Fdevents();
+
+	TcpLink *tcp_serv = TcpLink::listen("127.0.0.1", 8000);
+	if(!tcp_serv){
+		log_error("failed to listen at 127.0.0.1:8000, %s", strerror(errno));
+	}
 	
-	TcpSocket *tcp_serv = TcpSocket::listen("127.0.0.1", 9000);
-	fdes->set(tcp_serv->fd(), FDEVENT_IN, 0, tcp_serv);
+	trans->_fdes->set(tcp_serv->fd(), FDEVENT_IN, 0, tcp_serv);
 	
-	log_debug("");
 	while(1){
-		log_debug("");
-		events = fdes->wait(500);
+		events = trans->_fdes->wait(500);
 		
 		for(int i=0; i<(int)events->size(); i++){
 			const Fdevent *fde = events->at(i);
-			if(fde->data.ptr == tcp_serv){
-				TcpSocket *conn = tcp_serv->accept();
-				if(conn){
-					log_debug("new connection from %s:%d, fd: %d",
-						conn->remote_ip, conn->remote_port, conn->fd());
-					fdes->set(conn->fd(), FDEVENT_IN, 1, conn);
+			if(fde->data.ptr == &trans->_accept_ids){
+				trans->handle_accept_id();
+			}else if(fde->data.ptr == &trans->_close_ids){
+				trans->handle_close_id();
+			}else if(fde->data.ptr == tcp_serv){
+				TcpLink *link = tcp_serv->accept();
+				if(link){
+					trans->handle_new_link(link);
 				}else{
-					log_debug("accept return NULL");
+					log_error("accept return NULL");
 				}
 			}else{
-				TcpSocket *conn = (TcpSocket *)fde->data.ptr;
-				log_debug("read from connection %s:%d, fd: %d",
-					conn->remote_ip, conn->remote_port, conn->fd());
+				TcpLink *link = (TcpLink *)fde->data.ptr;
+				if(link){ // 防止已经被 fde_del
+					log_debug("read %s:%d, fd: %d", link->remote_ip, link->remote_port, link->fd());
+					int ret = link->net_read();
+					if(ret <= 0){
+						trans->handle_close_link(link);
+					}else{
+						//
+					}
+				}
 			}
 		}
-		
 	}
 	return NULL;
 }

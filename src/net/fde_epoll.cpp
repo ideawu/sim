@@ -60,6 +60,8 @@ int Fdevents::del(int fd){
 	}
 
 	struct Fdevent *fde = get_fde(fd);
+	fde->data.num = 0;
+	fde->data.ptr = NULL;
 	fde->s_flags = FDEVENT_NONE;
 	return 0;
 }

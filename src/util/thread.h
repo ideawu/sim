@@ -81,17 +81,109 @@ public:
 
 };
 
+// Thread safe queue
+template <class T>
+class Queue{
+	private:
+		pthread_cond_t cond;
+		pthread_mutex_t mutex;
+		std::queue<T> items;
+	public:
+		Queue();
+		~Queue();
+
+		bool empty();
+		int size();
+		int push(const T item);
+		// TODO: with timeout
+		int pop(T *data);
+};
+
+template <class T>
+Queue<T>::Queue(){
+	pthread_cond_init(&cond, NULL);
+	pthread_mutex_init(&mutex, NULL);
+}
+
+template <class T>
+Queue<T>::~Queue(){
+	pthread_cond_destroy(&cond);
+	pthread_mutex_destroy(&mutex);
+}
+
+template <class T>
+bool Queue<T>::empty(){
+	bool ret = false;
+	if(pthread_mutex_lock(&mutex) != 0){
+		return -1;
+	}
+	ret = items.empty();
+	pthread_mutex_unlock(&mutex);
+	return ret;
+}
+
+template <class T>
+int Queue<T>::size(){
+	int ret = -1;
+	if(pthread_mutex_lock(&mutex) != 0){
+		return -1;
+	}
+	ret = items.size();
+	pthread_mutex_unlock(&mutex);
+	return ret;
+}
+
+template <class T>
+int Queue<T>::push(const T item){
+	if(pthread_mutex_lock(&mutex) != 0){
+		return -1;
+	}
+	{
+		items.push(item);
+	}
+	pthread_mutex_unlock(&mutex);
+	pthread_cond_signal(&cond);
+	return 1;
+}
+
+template <class T>
+int Queue<T>::pop(T *data){
+	if(pthread_mutex_lock(&mutex) != 0){
+		return -1;
+	}
+	{
+		// 必须放在循环中, 因为 pthread_cond_wait 可能抢不到锁而被其它处理了
+		while(items.empty()){
+			//fprintf(stderr, "%d wait\n", pthread_self());
+			if(pthread_cond_wait(&cond, &mutex) != 0){
+				//fprintf(stderr, "%s %d -1!\n", __FILE__, __LINE__);
+				return -1;
+			}
+			//fprintf(stderr, "%d wait 2\n", pthread_self());
+		}
+		*data = items.front();
+		//fprintf(stderr, "%d job: %d\n", pthread_self(), (int)*data);
+		items.pop();
+	}
+	if(pthread_mutex_unlock(&mutex) != 0){
+		//fprintf(stderr, "error!\n");
+		return -1;
+	}
+		//fprintf(stderr, "%d wait end 2, job: %d\n", pthread_self(), (int)*data);
+	return 1;
+}
+
 // Selectable queue, multi writers, single reader
 template <class T>
-class SelectableQueue{
+class Channel{
 private:
 	int fds[2];
 public:
 	Mutex mutex;
 	std::queue<T> items;
 
-	SelectableQueue();
-	~SelectableQueue();
+	Channel();
+	~Channel();
 	int fd(){
 		return fds[0];
 	}
@@ -104,26 +196,26 @@ public:
 
 
 template <class T>
-SelectableQueue<T>::SelectableQueue(){
+Channel<T>::Channel(){
 	if(pipe(fds) == -1){
 		exit(0);
 	}
 }
 
 template <class T>
-SelectableQueue<T>::~SelectableQueue(){
+Channel<T>::~Channel(){
 	close(fds[0]);
 	close(fds[1]);
 }
 
 template <class T>
-int SelectableQueue<T>::size(){
+int Channel<T>::size(){
 	Locking l(&mutex);
 	return items.size();
 }
 
 template <class T>
-int SelectableQueue<T>::push(const T item){
+int Channel<T>::push(const T item){
 	Locking l(&mutex);
 	items.push(item);
 	if(::write(fds[1], "1", 1) == -1){
@@ -133,7 +225,7 @@ int SelectableQueue<T>::push(const T item){
 }
 
 template <class T>
-int SelectableQueue<T>::pop(T *data){
+int Channel<T>::pop(T *data){
 	int n, ret = 1;
 	char buf[1];
 

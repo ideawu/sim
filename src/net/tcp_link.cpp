@@ -5,11 +5,11 @@
 #include <stdarg.h>
 #include <sys/socket.h>
 #include "util/log.h"
-#include "tcp_socket.h"
+#include "tcp_link.h"
 
 // namespace sim{
 
-TcpSocket::TcpSocket(bool is_server){
+TcpLink::TcpLink(bool is_server){
 	sock = -1;
 	noblock_ = false;
 	remote_ip[0] = '\0';
@@ -17,37 +17,38 @@ TcpSocket::TcpSocket(bool is_server){
 	_buffer = new Buffer();
 }
 
-TcpSocket::~TcpSocket(){
+TcpLink::~TcpLink(){
 	this->close();
 	delete _buffer;
 }
 
-int TcpSocket::fd() const{
+int TcpLink::fd() const{
 	return sock;
 }
 
-Buffer* TcpSocket::buffer() const{
+Buffer* TcpLink::buffer() const{
 	return _buffer;
 }
 
-void TcpSocket::close(){
+void TcpLink::close(){
 	if(sock >= 0){
 		::close(sock);
 		sock = -1;
 	}
+	_status = -1;
 }
 
-void TcpSocket::nodelay(bool enable){
+void TcpLink::nodelay(bool enable){
 	int opt = enable? 1 : 0;
 	::setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *)&opt, sizeof(opt));
 }
 
-void TcpSocket::keepalive(bool enable){
+void TcpLink::keepalive(bool enable){
 	int opt = enable? 1 : 0;
 	::setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *)&opt, sizeof(opt));
 }
 
-void TcpSocket::noblock(bool enable){
+void TcpLink::noblock(bool enable){
 	noblock_ = enable;
 	if(enable){
 		::fcntl(sock, F_SETFL, O_NONBLOCK | O_RDWR);
@@ -56,12 +57,12 @@ void TcpSocket::noblock(bool enable){
 	}
 }
 
-TcpSocket* TcpSocket::connect(const std::string &ip, int port){
+TcpLink* TcpLink::connect(const std::string &ip, int port){
 	return connect(ip.c_str(), port);
 }
 
-TcpSocket* TcpSocket::connect(const char *ip, int port){
-	TcpSocket *link;
+TcpLink* TcpLink::connect(const char *ip, int port){
+	TcpLink *link;
 	int sock = -1;
 
 	struct sockaddr_in addr;
@@ -78,7 +79,7 @@ TcpSocket* TcpSocket::connect(const char *ip, int port){
 	}
 
 	//log_debug("fd: %d, connect to %s:%d", sock, ip, port);
-	link = new TcpSocket();
+	link = new TcpLink();
 	link->sock = sock;
 	link->keepalive(true);
 	return link;
@@ -90,12 +91,12 @@ sock_err:
 	return NULL;
 }
 
-TcpSocket* TcpSocket::listen(const std::string &ip, int port){
+TcpLink* TcpLink::listen(const std::string &ip, int port){
 	return listen(ip.c_str(), port);
 }
 
-TcpSocket* TcpSocket::listen(const char *ip, int port){
-	TcpSocket *link;
+TcpLink* TcpLink::listen(const char *ip, int port){
+	TcpLink *link;
 	int sock = -1;
 
 	int opt = 1;
@@ -119,7 +120,7 @@ TcpSocket* TcpSocket::listen(const char *ip, int port){
 	}
 	//log_debug("server socket fd: %d, listen on: %s:%d", sock, ip, port);
 
-	link = new TcpSocket(true);
+	link = new TcpLink(true);
 	link->sock = sock;
 	snprintf(link->remote_ip, sizeof(link->remote_ip), "%s", ip);
 	link->remote_port = port;
@@ -132,8 +133,8 @@ sock_err:
 	return NULL;
 }
 
-TcpSocket* TcpSocket::accept(){
-	TcpSocket *link;
+TcpLink* TcpLink::accept(){
+	TcpLink *link;
 	int client_sock;
 	struct sockaddr_in addr;
 	socklen_t addrlen = sizeof(addr);
@@ -151,7 +152,7 @@ TcpSocket* TcpSocket::accept(){
 		//log_error("socket %d set linger failed: %s", client_sock, strerror(errno));
 	}
 
-	link = new TcpSocket();
+	link = new TcpLink();
 	link->sock = client_sock;
 	link->keepalive(true);
 	inet_ntop(AF_INET, &addr.sin_addr, link->remote_ip, sizeof(link->remote_ip));
@@ -159,7 +160,7 @@ TcpSocket* TcpSocket::accept(){
 	return link;
 }
 
-int TcpSocket::net_read(){
+int TcpLink::net_read(){
 	int ret = 0;
 	char buf[8 * 1024];
 	int want = sizeof(buf);

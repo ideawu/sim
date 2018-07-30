@@ -11,7 +11,7 @@
 
 // namespace sim{
 
-class TcpSocket{
+class TcpLink{
 public:
 	char remote_ip[INET_ADDRSTRLEN];
 	int remote_port;
@@ -19,31 +19,33 @@ public:
 	double create_time;
 	double active_time;
 
-	~TcpSocket();
+	~TcpLink();
 	void close();
 	void nodelay(bool enable=true);
 	void noblock(bool enable=true);
 	void keepalive(bool enable=true);
 
+	int id() const;
 	int fd() const;
 	Buffer* buffer() const;
 
 	int net_read();
 	// int net_write();
 
-	static TcpSocket* connect(const char *ip, int port);
-	static TcpSocket* connect(const std::string &ip, int port);
-	static TcpSocket* listen(const char *ip, int port);
-	static TcpSocket* listen(const std::string &ip, int port);
-	TcpSocket* accept();
+	static TcpLink* connect(const char *ip, int port);
+	static TcpLink* connect(const std::string &ip, int port);
+	static TcpLink* listen(const char *ip, int port);
+	static TcpLink* listen(const std::string &ip, int port);
+	TcpLink* accept();
 
 private:
+	int _id;
 	int sock;
 	bool noblock_;
+	int _status;
 	Buffer* _buffer;
 	
-	TcpSocket(bool is_server=false);
-
+	TcpLink(bool is_server=false);
 };
 
 
