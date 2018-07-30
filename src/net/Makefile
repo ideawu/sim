@@ -1,12 +1,17 @@
 include ../../build_config.mk
 
 CFLAGS += -I ../
-OBJS=link.o transport.o
+OBJS = fde.o link.o transport.o tcp_socket.o
 
 all: $(OBJS)
-
+	
+fde.o: fde.h fde.cpp fde_select.cpp fde_epoll.cpp
+	${CXX} ${CFLAGS} -c fde.cpp
 .cpp.o:
 	$(CXX) ${CFLAGS} -c $< -o $@
+
+test:
+	$(CXX) ${CFLAGS} test.cpp ${OBJS} ../util/libutil.a
 
 clean:
 	rm -rf *.o *.a *.out
