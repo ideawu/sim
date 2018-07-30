@@ -33,6 +33,37 @@ public:
 	}
 };
 
+class Semaphore{
+private:
+	pthread_mutex_t _mutex;
+	pthread_cond_t _cond;
+	int _count;
+public:
+	Semaphore(){
+		_count = 0;
+		pthread_mutex_init(&_mutex, NULL);
+		pthread_cond_init(&_cond, NULL);
+	}
+	~Semaphore(){
+		pthread_cond_destroy(&_cond);
+		pthread_mutex_destroy(&_mutex);
+	}
+	void wait(){
+		pthread_mutex_lock(&_mutex);
+		while(_count == 0){
+			pthread_cond_wait(&_cond, &_mutex);
+		}
+		_count--;
+		pthread_mutex_unlock(&_mutex);
+	}
+	void notify(){
+		pthread_mutex_lock(&_mutex);
+		_count++;
+		pthread_mutex_unlock(&_mutex);
+		pthread_cond_signal(&_cond);
+	}
+};
+
 class Locking{
 private:
 	Mutex *mutex;
