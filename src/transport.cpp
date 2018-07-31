@@ -1,6 +1,7 @@
 #include "transport.h"
 #include "util/log.h"
-#include "tcp_link.h"
+#include "net/fde.h"
+#include "net/link.h"
 
 #define FDE_NUM_COMMON 0
 #define FDE_NUM_SERVER 1

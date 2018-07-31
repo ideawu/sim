@@ -1,5 +1,6 @@
 #include "line_server.h"
 #include "line_parser.h"
+#include "net/link.h"
 
 LineServer::LineServer(){
 }

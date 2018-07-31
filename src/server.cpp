@@ -1,7 +1,8 @@
 #include "server.h"
 #include <unistd.h>
-#include "tcp_link.h"
 #include "util/log.h"
+#include "net/link.h"
+#include "net/tcp_link.h"
 
 Server::Server(){
 	_link = NULL;

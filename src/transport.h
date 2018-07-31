@@ -4,11 +4,13 @@
 #include <map>
 #include <vector>
 #include "util/thread.h"
-#include "fde.h"
 #include "event.h"
 #include "server.h"
 #include "session.h"
 
+namespace sim{
+	class Fdevents;
+};
 using namespace sim;
 
 class Transport

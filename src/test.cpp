@@ -1,7 +1,7 @@
 #include "transport.h"
 #include "util/log.h"
-#include "line_message.h"
-#include "line_server.h"
+#include "line/line_message.h"
+#include "line/line_server.h"
 
 // using namespace sim;
 
@@ -70,7 +70,6 @@ int main(int argc, char **argv){
 				log_debug("recv: %s", msg->text().c_str());
 				delete msg;
 			}
-			usleep(100 * 1000);
 		}
 	}
 	

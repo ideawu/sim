@@ -4,6 +4,7 @@ CFLAGS += -I ../
 OBJS = fde.o link.o tcp_link.o
 
 all: $(OBJS)
+	ar -cru ./libnet.a ${OBJS}
 	
 .cpp.o:
 	$(CXX) ${CFLAGS} -c $< -o $@

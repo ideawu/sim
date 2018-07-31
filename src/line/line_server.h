@@ -1,8 +1,8 @@
 #ifndef SIM_LINE_SERVER_H
 #define SIM_LINE_SERVER_H
 
-#include "net/server.h"
-#include "net/session.h"
+#include "server.h"
+#include "session.h"
 
 class LineServer : public Server
 {

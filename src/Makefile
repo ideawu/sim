@@ -11,7 +11,7 @@ all: ${OBJS}
 test:
 	make clean
 	make
-	$(CXX) ${CFLAGS} test.cpp ${OBJS} ../util/libutil.a
+	$(CXX) ${CFLAGS} test.cpp ${OBJS} util/libutil.a net/libnet.a line/libline.a
 
 clean:
 	rm -rf *.o *.a *.out

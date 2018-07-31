@@ -2,7 +2,7 @@
 #define SIM_LINE_MESSAGE_H
 
 #include <string>
-#include "net/message.h"
+#include "message.h"
 #include "util/buffer.h"
 
 class LineMessage : public Message
