@@ -1,17 +1,15 @@
 include ../build_config.mk
 
 CFLAGS += -I .
-OBJS = event.o parser.o session.o transport.o server.o
+OBJS = 
+LIBS = util/libutil.a net/libnet.a line/libline.a core/libcore.a
 
 all: ${OBJS}
+	make clean
+	$(CXX) ${CFLAGS} test.cpp ${OBJS} ${LIBS}
 
 .cpp.o:
 	$(CXX) ${CFLAGS} -c $< -o $@
-
-test:
-	make clean
-	make
-	$(CXX) ${CFLAGS} test.cpp ${OBJS} util/libutil.a net/libnet.a line/libline.a
 
 clean:
 	rm -rf *.o *.a *.out

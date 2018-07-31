@@ -1,9 +1,9 @@
 #ifndef SIM_LINE_PARSER_H
 #define SIM_LINE_PARSER_H
 
-#include "parser.h"
-#include "message.h"
-#include "session.h"
+#include "core/parser.h"
+#include "core/message.h"
+#include "core/session.h"
 #include "util/buffer.h"
 
 class LineParser : public Parser
