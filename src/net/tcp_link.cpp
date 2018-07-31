@@ -103,7 +103,7 @@ sock_err:
 	return NULL;
 }
 
-TcpLink* TcpLink::accept(){
+Link* TcpLink::accept(){
 	TcpLink *link;
 	int client_sock;
 	struct sockaddr_in addr;

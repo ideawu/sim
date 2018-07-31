@@ -2,9 +2,11 @@
 #define SIM_TRANSPORT_H
 
 #include <map>
+#include <vector>
 #include "util/thread.h"
 #include "fde.h"
 #include "event.h"
+#include "server.h"
 #include "session.h"
 
 using namespace sim;
@@ -15,6 +17,9 @@ public:
 	Transport();
 	~Transport();
 	
+	void add_server(Server *serv);
+	void setup();
+	
 	Event wait(int timeout_ms);
 	
 	void accept(int id);
@@ -22,8 +27,6 @@ public:
 	
 	Message* recv(int id);
 	// void send(int id, Message *msg);
-	
-	void setup();
 	
 private:
 	Mutex _mutex;
@@ -44,6 +47,8 @@ private:
 	void handle_close_id();
 
 	Fdevents *_fdes;
+	
+	std::vector<Server*> _servers;
 	
 	static void* run(void *arg);
 };

@@ -1,5 +1,6 @@
 #include "session.h"
 #include "util/log.h"
+#include "line_message.h"
 
 static int id_incr = 1;
 

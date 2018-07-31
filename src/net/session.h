@@ -10,14 +10,14 @@ class Session
 {
 public:
 	Session(Link *link, Parser *parser);
-	~Session();
+	virtual ~Session();
 	
 	int id() const;
 	Link* link() const;
 	Parser* parser() const;
 	
 	// 返回解析成功的报文数量，出错返回-1
-	int parse();
+	virtual int parse();
 
 	Message* recv();
 	

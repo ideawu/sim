@@ -17,6 +17,7 @@ public:
 	void nodelay(bool enable=true);
 	void keepalive(bool enable=true);
 
+	virtual Link* accept();
 	virtual int net_read();
 	// int net_write();
 
@@ -24,7 +25,6 @@ public:
 	static TcpLink* connect(const std::string &ip, int port);
 	static TcpLink* listen(const char *ip, int port);
 	static TcpLink* listen(const std::string &ip, int port);
-	TcpLink* accept();
 
 private:
 	

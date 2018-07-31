@@ -1,6 +1,7 @@
 #include "transport.h"
 #include "util/log.h"
 #include "line_message.h"
+#include "line_server.h"
 
 // using namespace sim;
 
@@ -36,7 +37,18 @@ int main(int argc, char **argv){
 // 	}
 // #endif
 	
+	const char *host = "127.0.0.1";
+	int port = 8000;
+	
+	Server *serv = new LineServer();
+	if(serv->listen(host, port) == -1){
+		log_error("failed to listen at %s:%d, %s", host, port, strerror(errno));
+		exit(0);
+	}
+	log_debug("server listen at %s:%d", host, port);
+	
 	Transport *trans = new Transport();
+	trans->add_server(serv);
 	trans->setup();
 	log_debug("transport setup");
 

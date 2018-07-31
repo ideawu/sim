@@ -1,13 +1,34 @@
 #include "transport.h"
 #include "util/log.h"
-#include "line_parser.h"
-#include "line_message.h"
 #include "tcp_link.h"
 
+#define FDE_NUM_COMMON 0
+#define FDE_NUM_SERVER 1
+#define FDE_NUM_CLIENT 2
+
 Transport::Transport(){
+	_fdes = new Fdevents();
 }
 
 Transport::~Transport(){
+	delete _fdes;
+}
+
+void Transport::add_server(Server *serv){
+	serv->init();
+	_servers.push_back(serv);
+	_fdes->set(serv->link()->fd(), FDEVENT_IN, FDE_NUM_SERVER, serv);
+}
+
+void Transport::setup(){
+	_fdes->set(_accept_ids.fd(), FDEVENT_IN, FDE_NUM_COMMON, &_accept_ids);
+	_fdes->set(_close_ids.fd(), FDEVENT_IN, FDE_NUM_COMMON, &_close_ids);
+
+	pthread_t tid;
+	int err = pthread_create(&tid, NULL, &Transport::run, this);
+	if(err != 0){
+		log_error("can't create thread: %s", strerror(err));
+	}
 }
 
 Event Transport::wait(int timeout_ms){
@@ -103,7 +124,7 @@ void Transport::handle_accept_id(){
 		_opening_list.erase(sess->id());
 		_working_list[sess->id()] = sess;
 		
-		_fdes->set(sess->link()->fd(), FDEVENT_IN, 1, sess);
+		_fdes->set(sess->link()->fd(), FDEVENT_IN, FDE_NUM_CLIENT, sess);
 	}
 }
 
@@ -122,29 +143,9 @@ void Transport::handle_close_id(){
 	}
 }
 
-void Transport::setup(){
-	_fdes = new Fdevents();
-	
-	_fdes->set(_accept_ids.fd(), FDEVENT_IN, 0, &_accept_ids);
-	_fdes->set(_close_ids.fd(), FDEVENT_IN, 0, &_close_ids);
-
-	pthread_t tid;
-	int err = pthread_create(&tid, NULL, &Transport::run, this);
-	if(err != 0){
-		log_error("can't create thread: %s", strerror(err));
-	}
-}
-
 void* Transport::run(void *arg){
 	Transport *trans = (Transport *)arg;
 	const Fdevents::events_t *events;
-
-	TcpLink *tcp_serv = TcpLink::listen("127.0.0.1", 8000);
-	if(!tcp_serv){
-		log_error("failed to listen at 127.0.0.1:8000, %s", strerror(errno));
-	}
-	
-	trans->_fdes->set(tcp_serv->fd(), FDEVENT_IN, 0, tcp_serv);
 	
 	while(1){
 		events = trans->_fdes->wait(500);
@@ -155,18 +156,20 @@ void* Transport::run(void *arg){
 				trans->handle_accept_id();
 			}else if(fde->data.ptr == &trans->_close_ids){
 				trans->handle_close_id();
-			}else if(fde->data.ptr == tcp_serv){
-				Link *link = tcp_serv->accept();
-				if(link){
-					Session *sess = new Session(link, new LineParser());
-					trans->handle_on_new(sess);
-				}else{
-					log_error("accept return NULL");
-				}
 			}else{
-				Session *sess = (Session *)fde->data.ptr;
-				if(sess){ // 防止已经被 fde_del
-					trans->handle_on_read(sess);
+				if(fde->data.num == FDE_NUM_SERVER){
+					Server *serv = (Server *)fde->data.ptr;
+					Session *sess = serv->accept();
+					if(sess){
+						trans->handle_on_new(sess);
+					}else{
+						log_error("accept return NULL");
+					}
+				}else{
+					Session *sess = (Session *)fde->data.ptr;
+					if(sess){ // 防止已经被 fde_del
+						trans->handle_on_read(sess);
+					}
 				}
 			}
 		}

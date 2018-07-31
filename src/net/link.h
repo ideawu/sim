@@ -21,6 +21,7 @@ public:
 
 	void close();
 	virtual int net_read() = 0;
+	virtual Link* accept() = 0;
 
 protected:
 	int _fd;
