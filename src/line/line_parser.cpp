@@ -1,6 +1,5 @@
 #include "line_parser.h"
 #include <string>
-#include "util/buffer.h"
 #include "line_message.h"
 
 ParseState LineParser::parse(Buffer *buffer, Message **msg){
