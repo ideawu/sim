@@ -1,4 +1,5 @@
 #include "util/log.h"
+#include "core/event.h"
 #include "core/transport.h"
 #include "line/line_message.h"
 #include "line/line_server.h"
@@ -47,7 +48,7 @@ int main(int argc, char **argv){
 	}
 	log_debug("server listen at %s:%d", host, port);
 	
-	Transport *trans = new Transport();
+	Transport *trans = Transport::create();
 	trans->add_server(serv);
 	trans->setup();
 	log_debug("transport setup");

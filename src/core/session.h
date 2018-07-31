@@ -2,10 +2,10 @@
 #define SIM_SESSION_H
 
 #include <list>
-#include "parser.h"
-#include "message.h"
 
 class Link;
+class Parser;
+class Message;
 
 class Session
 {

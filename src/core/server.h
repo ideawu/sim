@@ -1,9 +1,8 @@
 #ifndef SIM_SERVER_H
 #define SIM_SERVER_H
 
-#include "session.h"
-
 class Link;
+class Session;
 
 class Server
 {

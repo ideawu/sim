@@ -3,6 +3,7 @@
 #include "util/log.h"
 #include "net/link.h"
 #include "net/tcp_link.h"
+#include "session.h"
 
 Server::Server(){
 	_link = NULL;

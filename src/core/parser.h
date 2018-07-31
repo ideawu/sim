@@ -1,9 +1,8 @@
 #ifndef SIM_PARSER_H
 #define SIM_PARSER_H
 
-#include "message.h"
-
 class Buffer;
+class Message;
 class ParseState;
 
 class Parser

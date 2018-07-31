@@ -1,7 +1,7 @@
 include ../../build_config.mk
 
 CFLAGS += -I ../
-OBJS = event.o parser.o session.o transport.o server.o
+OBJS = event.o parser.o session.o transport_impl.o server.o
 
 all: ${OBJS}
 	ar -cru ./libcore.a ${OBJS}

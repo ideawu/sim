@@ -1,58 +1,30 @@
 #ifndef SIM_TRANSPORT_H
 #define SIM_TRANSPORT_H
 
-#include <map>
-#include <vector>
-#include "util/thread.h"
-#include "event.h"
-#include "server.h"
-#include "session.h"
-
-namespace sim{
-	class Fdevents;
-};
-using namespace sim;
+class Event;
+class Server;
+class Message;
 
 class Transport
 {
 public:
-	Transport();
-	~Transport();
+	static Transport* create();
 	
-	void add_server(Server *serv);
-	void setup();
+	virtual ~Transport(){}
 	
-	Event wait(int timeout_ms);
+	virtual void add_server(Server *serv) = 0;
+	virtual void setup() = 0;
 	
-	void accept(int id);
-	void close(int id);
+	virtual Event wait(int timeout_ms) = 0;
 	
-	Message* recv(int id);
+	virtual void accept(int id) = 0;
+	virtual void close(int id) = 0;
+	
+	virtual Message* recv(int id) = 0;
 	// void send(int id, Message *msg);
 	
-private:
-	Mutex _mutex;
-	
-	std::map<int, Session*> _working_list;
-	std::map<int, Session*> _opening_list;
-	std::map<int, Session*> _closing_list;
-	
-	Queue<Event> _events;
-	
-	Channel<int> _accept_ids;
-	Channel<int> _close_ids;
-	
-	void handle_on_new(Session *sess);
-	void handle_on_close(Session *sess);
-	void handle_on_read(Session *sess);
-	void handle_accept_id();
-	void handle_close_id();
-
-	Fdevents *_fdes;
-	
-	std::vector<Server*> _servers;
-	
-	static void* run(void *arg);
+protected:
+	Transport(){}
 };
 
 #endif

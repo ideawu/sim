@@ -1,4 +1,4 @@
-#include "transport.h"
+#include "transport_impl.h"
 #include "util/log.h"
 #include "net/fde.h"
 #include "net/link.h"
@@ -7,42 +7,48 @@
 #define FDE_NUM_SERVER 1
 #define FDE_NUM_CLIENT 2
 
-Transport::Transport(){
+// static
+Transport* Transport::create(){
+	Transport *ret = new TransportImpl();
+	return ret;
+}
+
+TransportImpl::TransportImpl(){
 	_fdes = new Fdevents();
 }
 
-Transport::~Transport(){
+TransportImpl::~TransportImpl(){
 	delete _fdes;
 }
 
-void Transport::add_server(Server *serv){
+void TransportImpl::add_server(Server *serv){
 	serv->init();
 	_servers.push_back(serv);
 	_fdes->set(serv->link()->fd(), FDEVENT_IN, FDE_NUM_SERVER, serv);
 }
 
-void Transport::setup(){
+void TransportImpl::setup(){
 	_fdes->set(_accept_ids.fd(), FDEVENT_IN, FDE_NUM_COMMON, &_accept_ids);
 	_fdes->set(_close_ids.fd(), FDEVENT_IN, FDE_NUM_COMMON, &_close_ids);
 
 	pthread_t tid;
-	int err = pthread_create(&tid, NULL, &Transport::run, this);
+	int err = pthread_create(&tid, NULL, &TransportImpl::run, this);
 	if(err != 0){
 		log_error("can't create thread: %s", strerror(err));
 	}
 }
 
-Event Transport::wait(int timeout_ms){
+Event TransportImpl::wait(int timeout_ms){
 	Event event;
 	_events.pop(&event, timeout_ms);
 	return event;
 }
 
-void Transport::accept(int id){
+void TransportImpl::accept(int id){
 	this->_accept_ids.push(id);
 }
 
-void Transport::close(int id){
+void TransportImpl::close(int id){
 	Locking l(&_mutex);
 	if(_opening_list.find(id) != _opening_list.end()){
 		Session *sess = _opening_list[id];
@@ -58,7 +64,7 @@ void Transport::close(int id){
 	this->_close_ids.push(id);
 }
 
-Message* Transport::recv(int id){
+Message* TransportImpl::recv(int id){
 	Locking l(&_mutex);
 	if(_working_list.find(id) != _working_list.end()){
 		Session *sess = _working_list[id];
@@ -67,7 +73,7 @@ Message* Transport::recv(int id){
 	return NULL;
 }
 
-void Transport::handle_on_new(Session *sess){
+void TransportImpl::handle_on_new(Session *sess){
 	log_debug("on new %s", sess->link()->address().c_str());
 
 	Locking l(&_mutex);
@@ -76,7 +82,7 @@ void Transport::handle_on_new(Session *sess){
 	this->_events.push(Event::new_event(sess));
 }
 
-void Transport::handle_on_close(Session *sess){
+void TransportImpl::handle_on_close(Session *sess){
 	int id = sess->id();
 	log_debug("on close %s", sess->link()->address().c_str());
 	Locking l(&_mutex);
@@ -89,7 +95,7 @@ void Transport::handle_on_close(Session *sess){
 	}
 }
 
-void Transport::handle_on_read(Session *sess){
+void TransportImpl::handle_on_read(Session *sess){
 	// log_debug("net read %s", sess->link()->address().c_str());
 	
 	bool error = false;
@@ -114,7 +120,7 @@ void Transport::handle_on_read(Session *sess){
 	}
 }
 
-void Transport::handle_accept_id(){
+void TransportImpl::handle_accept_id(){
 	int id;
 	_accept_ids.pop(&id);
 	
@@ -129,7 +135,7 @@ void Transport::handle_accept_id(){
 	}
 }
 
-void Transport::handle_close_id(){
+void TransportImpl::handle_close_id(){
 	int id;
 	_close_ids.pop(&id);
 
@@ -144,8 +150,8 @@ void Transport::handle_close_id(){
 	}
 }
 
-void* Transport::run(void *arg){
-	Transport *trans = (Transport *)arg;
+void* TransportImpl::run(void *arg){
+	TransportImpl *trans = (TransportImpl *)arg;
 	const Fdevents::events_t *events;
 	
 	while(1){

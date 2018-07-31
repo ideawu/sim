@@ -1,4 +1,5 @@
 #include "event.h"
+#include "session.h"
 
 Event Event::new_event(Session *sess){
 	return Event(sess->id(), 0);

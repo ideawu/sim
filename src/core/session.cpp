@@ -1,6 +1,8 @@
 #include "session.h"
 #include "util/log.h"
 #include "net/link.h"
+#include "parser.h"
+#include "message.h"
 
 static int id_incr = 1;
 

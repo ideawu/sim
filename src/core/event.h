@@ -1,7 +1,7 @@
 #ifndef SIM_EVENT_H
 #define SIM_EVENT_H
 
-#include "session.h"
+class Session;
 
 class Event
 {
