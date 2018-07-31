@@ -14,12 +14,13 @@
 class TcpLink : public Link{
 public:
 	virtual ~TcpLink();
+
 	void nodelay(bool enable=true);
 	void keepalive(bool enable=true);
 
 	Buffer* buffer() const;
 
-	int net_read();
+	virtual int net_read();
 	// int net_write();
 
 	static TcpLink* connect(const char *ip, int port);

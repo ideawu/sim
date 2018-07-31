@@ -2,10 +2,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-static int id_incr = 1;
-
 Link::Link(){
-	_id = id_incr++;
 	_fd = -1;
 	_nonblock = false;
 }
@@ -14,12 +11,12 @@ Link::~Link(){
 	this->close();
 }
 
-int Link::id() const{
-	return _id;
-}
-
 int Link::fd() const{
 	return _fd;
+}
+
+std::string Link::address() const{
+	return _address;
 }
 
 void Link::close(){

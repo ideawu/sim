@@ -38,10 +38,9 @@ int main(int argc, char **argv){
 	Transport *trans = new Transport();
 	trans->setup();
 	log_debug("transport setup");
-	
-	
+
 	while(!quit){
-		LinkEvent event = trans->wait(50);
+		Event event = trans->wait(50);
 		if(event.is_new()){
 			log_debug("accept");
 			trans->accept(event.id());
@@ -50,5 +49,6 @@ int main(int argc, char **argv){
 			trans->close(event.id());
 		}
 	}
+	
 	return 0;
 }

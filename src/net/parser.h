@@ -1,7 +1,7 @@
 #ifndef SIM_PARSER_H
 #define SIM_PARSER_H
 
-#include "buffer.h"
+#include "util/buffer.h"
 #include "message.h"
 
 class ParseStatus;

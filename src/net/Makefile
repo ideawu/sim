@@ -1,7 +1,7 @@
 include ../../build_config.mk
 
 CFLAGS += -I ../
-OBJS = fde.o link.o tcp_link.o transport.o
+OBJS = fde.o link.o tcp_link.o event.o session.o transport.o
 
 all: $(OBJS)
 	

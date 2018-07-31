@@ -1,5 +1,8 @@
 #include "transport.h"
 #include "util/log.h"
+#include "line_parser.h"
+#include "line_message.h"
+#include "tcp_link.h"
 
 Transport::Transport(){
 }
@@ -7,8 +10,8 @@ Transport::Transport(){
 Transport::~Transport(){
 }
 
-LinkEvent Transport::wait(int timeout_ms){
-	LinkEvent event;
+Event Transport::wait(int timeout_ms){
+	Event event;
 	_events.pop(&event, timeout_ms);
 	return event;
 }
@@ -20,33 +23,36 @@ void Transport::accept(int id){
 void Transport::close(int id){
 	Locking l(&_mutex);
 	if(_opening_list.find(id) != _opening_list.end()){
-		Link *link = _opening_list[id];
-		_opening_list.erase(link->id());
-		_closing_list[link->id()] = link;
+		Session *sess = _opening_list[id];
+		_opening_list.erase(sess->id());
+		_closing_list[sess->id()] = sess;
 		
 		this->_close_ids.push(id);
 	}
 	if(_working_list.find(id) != _working_list.end()){
-		Link *link = _working_list[id];
-		_working_list.erase(link->id());
-		_closing_list[link->id()] = link;
+		Session *sess = _working_list[id];
+		_working_list.erase(sess->id());
+		_closing_list[sess->id()] = sess;
 		
 		this->_close_ids.push(id);
 	}
 }
 
-void Transport::handle_on_new(Link *link){
-	Locking l(&_mutex);
-	_opening_list[link->id()] = link;
+void Transport::handle_on_new(Session *sess){
+	log_debug("on new %s", sess->link()->address().c_str());
 
-	this->_events.push(LinkEvent::new_link(link));
+	Locking l(&_mutex);
+	_opening_list[sess->id()] = sess;
+
+	this->_events.push(Event::new_event(sess));
 }
 
-void Transport::handle_on_close(Link *link){
-	this->close(link->id());
+void Transport::handle_on_close(Session *sess){
+	log_debug("on close %s", sess->link()->address().c_str());
+	this->close(sess->id());
 	
-	_fdes->del(link->fd());
-	this->_events.push(LinkEvent::close_link(link));
+	_fdes->del(sess->link()->fd());
+	this->_events.push(Event::close_event(sess));
 }
 
 void Transport::handle_accept_id(){
@@ -55,12 +61,12 @@ void Transport::handle_accept_id(){
 	
 	Locking l(&_mutex);
 	if(_opening_list.find(id) != _opening_list.end()){
-		Link *link = _opening_list[id];
-		log_debug("accept %s:%d", link->remote_ip, link->remote_port);
-		_opening_list.erase(link->id());
-		_working_list[link->id()] = link;
+		Session *sess = _opening_list[id];
+		log_debug("accept %s", sess->link()->address().c_str());
+		_opening_list.erase(sess->id());
+		_working_list[sess->id()] = sess;
 		
-		_fdes->set(link->fd(), FDEVENT_IN, 1, link);
+		_fdes->set(sess->link()->fd(), FDEVENT_IN, 1, sess);
 	}
 }
 
@@ -70,12 +76,12 @@ void Transport::handle_close_id(){
 
 	Locking l(&_mutex);
 	if(_closing_list.find(id) != _closing_list.end()){
-		Link *link = _closing_list[id];
-		log_debug("close %s:%d", link->remote_ip, link->remote_port);
+		Session *sess = _closing_list[id];
+		log_debug("close %s", sess->link()->address().c_str());
 		_closing_list.erase(id);
 	
-		_fdes->del(link->fd());
-		delete link;
+		_fdes->del(sess->link()->fd());
+		delete sess;
 	}
 }
 
@@ -113,23 +119,29 @@ void* Transport::run(void *arg){
 			}else if(fde->data.ptr == &trans->_close_ids){
 				trans->handle_close_id();
 			}else if(fde->data.ptr == tcp_serv){
-				TcpLink *link = tcp_serv->accept();
+				Link *link = tcp_serv->accept();
 				if(link){
-					log_debug("on new %s:%d", link->remote_ip, link->remote_port);
-					trans->handle_on_new(link);
+					Session *sess = new Session(link);
+					trans->handle_on_new(sess);
 				}else{
 					log_error("accept return NULL");
 				}
 			}else{
-				TcpLink *link = (TcpLink *)fde->data.ptr;
-				if(link){ // 防止已经被 fde_del
-					log_debug("on read %s:%d", link->remote_ip, link->remote_port);
+				Session *sess = (Session *)fde->data.ptr;
+				if(sess){ // 防止已经被 fde_del
+					log_debug("net read %s", sess->link()->address().c_str());
+					Link *link = sess->link();
 					int ret = link->net_read();
 					if(ret <= 0){
-						log_debug("on close %s:%d", link->remote_ip, link->remote_port);
-						trans->handle_on_close(link);
+						trans->handle_on_close(sess);
 					}else{
-						//
+						// LineParser parser;
+						// Buffer *buffer = link->buffer();
+						// Message *msg;
+						// ParseStatus s = parser.parse(buffer, &msg);
+						// if(s.ok()){
+						// 	log_debug("recv: %s", ((LineMessage *)msg)->text().c_str());
+						// }
 					}
 				}
 			}

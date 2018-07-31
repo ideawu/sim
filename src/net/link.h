@@ -2,29 +2,28 @@
 #define SIM_LINK_H
 
 #include <arpa/inet.h>
+#include <string>
 
 class Link
 {
 public:
-	// TODO:
-	char remote_ip[INET_ADDRSTRLEN];
-	int remote_port;
-
 	Link();
 	virtual ~Link();
 
-	int id() const;
 	int fd() const;
-	void close();
+	std::string address() const;
 	
 	bool nonblock() const;
 	void nonblock(bool enable);
 
+	void close();
+	virtual int net_read() = 0;
+
 protected:
 	int _fd;
+	std::string _address;
 	
 private:
-	int _id;
 	bool _nonblock;
 };
 

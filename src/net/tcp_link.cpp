@@ -9,8 +9,6 @@
 // namespace sim{
 
 TcpLink::TcpLink(bool is_server){
-	remote_ip[0] = '\0';
-	remote_port = -1;
 	_buffer = new Buffer();
 }
 
@@ -94,11 +92,13 @@ TcpLink* TcpLink::listen(const char *ip, int port){
 		goto sock_err;
 	}
 	//log_debug("server socket fd: %d, listen on: %s:%d", sock, ip, port);
+	char s[INET_ADDRSTRLEN + 6];
+	snprintf(s, sizeof(s), "%s:%d", ip, port);
 
 	link = new TcpLink(true);
 	link->_fd = sock;
-	snprintf(link->remote_ip, sizeof(link->remote_ip), "%s", ip);
-	link->remote_port = port;
+	link->_address = s;
+
 	return link;
 sock_err:
 	//log_debug("listen %s:%d failed: %s", ip, port, strerror(errno));
@@ -127,11 +127,15 @@ TcpLink* TcpLink::accept(){
 		//log_error("socket %d set linger failed: %s", client_sock, strerror(errno));
 	}
 
+	char s[INET_ADDRSTRLEN + 6];
+	inet_ntop(AF_INET, &addr.sin_addr, s, sizeof(s));
+	int len = strlen(s);
+	snprintf(s+len, sizeof(s) - len, "%d", ntohs(addr.sin_port));
+
 	link = new TcpLink();
 	link->_fd = client_sock;
+	link->_address = s;
 	link->keepalive(true);
-	inet_ntop(AF_INET, &addr.sin_addr, link->remote_ip, sizeof(link->remote_ip));
-	link->remote_port = ntohs(addr.sin_port);
 	return link;
 }
 

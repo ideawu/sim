@@ -3,53 +3,11 @@
 
 #include <map>
 #include "util/thread.h"
-#include "tcp_link.h"
 #include "fde.h"
+#include "event.h"
+#include "session.h"
 
 using namespace sim;
-
-
-class LinkEvent
-{
-public:
-	LinkEvent(){
-		_status = -1;
-	}
-	LinkEvent(int id, int status){
-		_id = id;
-		_status = status;
-	}
-	
-	int id() const{
-		return _id;
-	}
-	bool is_none() const{
-		return _status == -1;
-	}
-	bool is_new() const{
-		return _status == 0;
-	}
-	bool is_close() const{
-		return _status == 1;
-	}
-	bool is_read() const{
-		return _status == 2;
-	}
-	static LinkEvent new_link(Link *link){
-		return LinkEvent(link->id(), 0);
-	}
-	static LinkEvent close_link(Link *link){
-		return LinkEvent(link->id(), 1);
-	}
-	static LinkEvent read_link(Link *link){
-		return LinkEvent(link->id(), 2);
-	}
-	
-	friend class Transport;
-private:
-	int _id;
-	int _status;
-};
 
 class Transport
 {
@@ -57,7 +15,7 @@ public:
 	Transport();
 	~Transport();
 	
-	LinkEvent wait(int timeout_ms);
+	Event wait(int timeout_ms);
 	
 	void accept(int id);
 	void close(int id);
@@ -70,17 +28,17 @@ public:
 private:
 	Mutex _mutex;
 	
-	std::map<int, Link*> _working_list;
-	std::map<int, Link*> _opening_list;
-	std::map<int, Link*> _closing_list;
+	std::map<int, Session*> _working_list;
+	std::map<int, Session*> _opening_list;
+	std::map<int, Session*> _closing_list;
 	
-	Queue<LinkEvent> _events;
+	Queue<Event> _events;
 	
 	Channel<int> _accept_ids;
 	Channel<int> _close_ids;
 	
-	void handle_on_new(Link *link);
-	void handle_on_close(Link *link);
+	void handle_on_new(Session *sess);
+	void handle_on_close(Session *sess);
 	void handle_accept_id();
 	void handle_close_id();
 

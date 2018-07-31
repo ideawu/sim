@@ -1,7 +1,7 @@
 #ifndef SIM_MESSAGE_H
 #define SIM_MESSAGE_H
 
-#include "buffer.h"
+#include "util/buffer.h"
 
 class Message
 {
