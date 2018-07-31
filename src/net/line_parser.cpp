@@ -9,6 +9,7 @@ ParseState LineParser::parse(Buffer *buffer, Message **msg){
 	if(!end){
 		return ParseState::none_state();
 	}
+	int total = end - data + 1;
 	int len = end - data;
 	// 兼容 \r\n
 	if(len >= 1 && data[len - 1] == '\r'){
@@ -19,6 +20,8 @@ ParseState LineParser::parse(Buffer *buffer, Message **msg){
 	LineMessage *lm = new LineMessage();
 	lm->text(s);
 	*msg = lm;
+	
+	buffer->remove(total);
 	
 	return ParseState::ready_state();
 }

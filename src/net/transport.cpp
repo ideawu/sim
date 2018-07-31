@@ -26,16 +26,23 @@ void Transport::close(int id){
 		Session *sess = _opening_list[id];
 		_opening_list.erase(sess->id());
 		_closing_list[sess->id()] = sess;
-		
-		this->_close_ids.push(id);
 	}
 	if(_working_list.find(id) != _working_list.end()){
 		Session *sess = _working_list[id];
 		_working_list.erase(sess->id());
 		_closing_list[sess->id()] = sess;
-		
-		this->_close_ids.push(id);
 	}
+	
+	this->_close_ids.push(id);
+}
+
+Message* Transport::recv(int id){
+	Locking l(&_mutex);
+	if(_working_list.find(id) != _working_list.end()){
+		Session *sess = _working_list[id];
+		return sess->recv();
+	}
+	return NULL;
 }
 
 void Transport::handle_on_new(Session *sess){
@@ -48,11 +55,41 @@ void Transport::handle_on_new(Session *sess){
 }
 
 void Transport::handle_on_close(Session *sess){
+	int id = sess->id();
 	log_debug("on close %s", sess->link()->address().c_str());
-	this->close(sess->id());
+	Locking l(&_mutex);
+	if(_working_list.find(id) != _working_list.end()){
+		_working_list.erase(sess->id());
+		_closing_list[sess->id()] = sess;
 	
-	_fdes->del(sess->link()->fd());
-	this->_events.push(Event::close_event(sess));
+		_fdes->del(sess->link()->fd());
+		this->_events.push(Event::close_event(sess));
+	}
+}
+
+void Transport::handle_on_read(Session *sess){
+	// log_debug("net read %s", sess->link()->address().c_str());
+	
+	bool error = false;
+	int ret = sess->link()->net_read();
+	if(ret <= 0){
+		error = true;
+	}else{
+		Locking l(&_mutex);
+		int num = sess->parse();
+		if(num == -1){
+			log_debug("parse error!");
+			error = true;
+		}else{
+			for(int i=0; i<num; i++){
+				this->_events.push(Event::read_event(sess));
+			}
+		}
+	}
+
+	if(error){
+		this->handle_on_close(sess);
+	}
 }
 
 void Transport::handle_accept_id(){
@@ -129,20 +166,7 @@ void* Transport::run(void *arg){
 			}else{
 				Session *sess = (Session *)fde->data.ptr;
 				if(sess){ // 防止已经被 fde_del
-					log_debug("net read %s", sess->link()->address().c_str());
-					Link *link = sess->link();
-					int ret = link->net_read();
-					if(ret <= 0){
-						trans->handle_on_close(sess);
-					}else{
-						ParseState s = sess->parse();
-						if(s.ready()){
-							trans->_events.push(Event::read_event(sess));
-						}else if(s.error()){
-							log_debug("parse error!");
-							trans->handle_on_close(sess);
-						}
-					}
+					trans->handle_on_read(sess);
 				}
 			}
 		}

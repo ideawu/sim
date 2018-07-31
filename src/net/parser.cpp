@@ -12,9 +12,9 @@ ParseState ParseState::error_state(){
 	return ParseState(-1);
 }
 
-// ParseState::ParseState(){
-// 	_code = 0;
-// }
+ParseState::ParseState(){
+	_code = 0;
+}
 
 ParseState::ParseState(int code){
 	_code = code;

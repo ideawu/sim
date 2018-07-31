@@ -16,7 +16,7 @@ public:
 	bool is_none() const;
 	bool is_new() const;
 	bool is_close() const;
-	bool is_read() const;
+	bool is_read() const; // 收到一个报文
 
 private:
 	int _id;

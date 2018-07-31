@@ -22,7 +22,7 @@ public:
 	static ParseState ready_state();
 	static ParseState error_state();
 	
-	// ParseState();
+	ParseState();
 	~ParseState();
 	
 	bool none() const;

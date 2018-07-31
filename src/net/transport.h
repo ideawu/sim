@@ -20,7 +20,7 @@ public:
 	void accept(int id);
 	void close(int id);
 	
-	// Message* recv(int id);
+	Message* recv(int id);
 	// void send(int id, Message *msg);
 	
 	void setup();
@@ -39,6 +39,7 @@ private:
 	
 	void handle_on_new(Session *sess);
 	void handle_on_close(Session *sess);
+	void handle_on_read(Session *sess);
 	void handle_accept_id();
 	void handle_close_id();
 

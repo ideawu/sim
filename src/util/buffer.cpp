@@ -21,7 +21,7 @@ char* Buffer::data(){
 }
 
 int Buffer::remove(int count){
-	memmove(_buf + count, _buf, _size - count);
+	memmove(_buf, _buf + count, _size - count);
 	_size -= count;
 	return count;
 }

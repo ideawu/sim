@@ -156,32 +156,32 @@ int Queue<T>::pop(T *data, int timeout_ms){
 		return -1;
 	}
 	{
-		while(1){
-		    struct timeval now;
-		    gettimeofday(&now, NULL);
-
-			int r;
+		while(items.empty()){
 			if(timeout_ms == -1){
-				r = pthread_cond_wait(&cond, &mutex);
+				// 可能被系统中断
+				pthread_cond_wait(&cond, &mutex);
 			}else{
+			    struct timeval now;
+			    gettimeofday(&now, NULL);
+
 				struct timespec tv;
 				tv.tv_sec = now.tv_sec + (timeout_ms / 1000);
-				tv.tv_nsec = (now.tv_usec + timeout_ms * 1000) * 1000;
+				tv.tv_nsec = (now.tv_usec + (timeout_ms % 1000) * 1000) * 1000;
 			    tv.tv_sec += tv.tv_nsec / (1000 * 1000 * 1000);
 			    tv.tv_nsec %= (1000 * 1000 * 1000);
-				r = pthread_cond_timedwait(&cond, &mutex, &tv);
-				if(r == ETIMEDOUT){
-					ret = 0;
-					break;
-				}
-			}
-			
-			if(r == 0 && !items.empty()){
-				*data = items.front();
-				items.pop();
-				ret = 1;
+				// 超时精确度较差，误差在 5ms 级别
+				// 可能被系统中断
+				pthread_cond_timedwait(&cond, &mutex, &tv);
+				// pthread_cond_timedwait() == ETIMEDOUT
 				break;
 			}
+		}
+		if(items.empty()){
+			ret = 0;
+		}else{
+			ret = 1;
+			*data = items.front();
+			items.pop();
 		}
 	}
 	if(pthread_mutex_unlock(&mutex) != 0){

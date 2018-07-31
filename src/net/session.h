@@ -16,8 +16,9 @@ public:
 	Link* link() const;
 	Parser* parser() const;
 	
-	ParseState parse();
-	
+	// 返回解析成功的报文数量，出错返回-1
+	int parse();
+
 	Message* recv();
 	
 private:

@@ -12,6 +12,14 @@ Session::Session(Link *link, Parser *parser){
 Session::~Session(){
 	delete _link;
 	delete _parser;
+	for(std::list<Message *>::iterator it=_input.begin(); it!=_input.end(); it++){
+		Message *msg = *it;
+		delete msg;
+	}
+	for(std::list<Message *>::iterator it=_output.begin(); it!=_output.end(); it++){
+		Message *msg = *it;
+		delete msg;
+	}
 }
 
 int Session::id() const{
@@ -26,25 +34,29 @@ Parser* Session::parser() const{
 	return _parser;
 }
 
-ParseState Session::parse(){
+int Session::parse(){
+	int ret = 0;
 	while(1){
 		Message *msg;
 		ParseState s = _parser->parse(_link->buffer(), &msg);
 		if(s.ready()){
 			_input.push_back(msg);
+			ret ++;
 		}else if(s.error()){
-			_input.clear();
-			_output.clear();
-			return s;
+			return -1;
 		}else{
 			break;
 		}
 	}
-	
-	log_debug("received %d message(s)", (int)_input.size());
+	log_debug("received %d message(s)", ret);
+	return ret;
+}
+
+Message* Session::recv(){
 	if(_input.empty()){
-		return ParseState::none_state();
-	}else{
-		return ParseState::ready_state();
+		return NULL;
 	}
+	Message *msg = _input.front();
+	_input.pop_front();
+	return msg;
 }
