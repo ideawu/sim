@@ -21,10 +21,10 @@ public:
 	void nonblock(bool enable);
 
 protected:
-	int _id;
 	int _fd;
 	
 private:
+	int _id;
 	bool _nonblock;
 };
 
