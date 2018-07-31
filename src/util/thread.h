@@ -98,7 +98,7 @@ public:
 	int size();
 	int push(const T item);
 	int pop(T *data);
-	int pop(T *data, int timeout_ms);
+	int pop(T *data, int timeout_ms=-1);
 };
 
 template <class T>
@@ -149,33 +149,6 @@ int Queue<T>::push(const T item){
 }
 
 template <class T>
-int Queue<T>::pop(T *data){
-	if(pthread_mutex_lock(&mutex) != 0){
-		return -1;
-	}
-	{
-		// 必须放在循环中, 因为 pthread_cond_wait 可能被中断
-		while(items.empty()){
-			//fprintf(stderr, "%d wait\n", pthread_self());
-			if(pthread_cond_wait(&cond, &mutex) != 0){
-				//fprintf(stderr, "%s %d -1!\n", __FILE__, __LINE__);
-				return -1;
-			}
-			//fprintf(stderr, "%d wait 2\n", pthread_self());
-		}
-		*data = items.front();
-		//fprintf(stderr, "%d job: %d\n", pthread_self(), (int)*data);
-		items.pop();
-	}
-	if(pthread_mutex_unlock(&mutex) != 0){
-		//fprintf(stderr, "error!\n");
-		return -1;
-	}
-		//fprintf(stderr, "%d wait end 2, job: %d\n", pthread_self(), (int)*data);
-	return 1;
-}
-
-template <class T>
 int Queue<T>::pop(T *data, int timeout_ms){
 	int ret = 0;
 
@@ -187,31 +160,33 @@ int Queue<T>::pop(T *data, int timeout_ms){
 		    struct timeval now;
 		    gettimeofday(&now, NULL);
 
-			struct timespec tv;
-			tv.tv_sec = now.tv_sec + (timeout_ms / 1000);
-			tv.tv_nsec = (now.tv_usec + timeout_ms * 1000) * 1000;
-		    tv.tv_sec += tv.tv_nsec / (1000 * 1000 * 1000);
-		    tv.tv_nsec %= (1000 * 1000 * 1000);
-			
-			int r = pthread_cond_timedwait(&cond, &mutex, &tv);
-			if(r == ETIMEDOUT){
-				ret = 0;
-				break;
-			}else if(r == 0){
-				ret = 1;
-				if(!items.empty()){
-					*data = items.front();
-					items.pop();
+			int r;
+			if(timeout_ms == -1){
+				r = pthread_cond_wait(&cond, &mutex);
+			}else{
+				struct timespec tv;
+				tv.tv_sec = now.tv_sec + (timeout_ms / 1000);
+				tv.tv_nsec = (now.tv_usec + timeout_ms * 1000) * 1000;
+			    tv.tv_sec += tv.tv_nsec / (1000 * 1000 * 1000);
+			    tv.tv_nsec %= (1000 * 1000 * 1000);
+				r = pthread_cond_timedwait(&cond, &mutex, &tv);
+				if(r == ETIMEDOUT){
+					ret = 0;
 					break;
 				}
+			}
+			
+			if(r == 0 && !items.empty()){
+				*data = items.front();
+				items.pop();
+				ret = 1;
+				break;
 			}
 		}
 	}
 	if(pthread_mutex_unlock(&mutex) != 0){
-		//fprintf(stderr, "error!\n");
 		return -1;
 	}
-		//fprintf(stderr, "%d wait end 2, job: %d\n", pthread_self(), (int)*data);
 	return ret;
 }
 
