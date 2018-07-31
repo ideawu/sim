@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <string.h>
 #include <stdarg.h>
 #include <sys/socket.h>
@@ -9,59 +8,28 @@
 
 // namespace sim{
 
-static int id_incr = 1;
-
 TcpLink::TcpLink(bool is_server){
-	_id = id_incr++;
-	sock = -1;
-	noblock_ = false;
 	remote_ip[0] = '\0';
 	remote_port = -1;
 	_buffer = new Buffer();
 }
 
 TcpLink::~TcpLink(){
-	this->close();
 	delete _buffer;
-}
-
-int TcpLink::id() const{
-	return _id;
-}
-
-int TcpLink::fd() const{
-	return sock;
 }
 
 Buffer* TcpLink::buffer() const{
 	return _buffer;
 }
 
-void TcpLink::close(){
-	if(sock >= 0){
-		::close(sock);
-		sock = -1;
-	}
-	_status = -1;
-}
-
 void TcpLink::nodelay(bool enable){
 	int opt = enable? 1 : 0;
-	::setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *)&opt, sizeof(opt));
+	::setsockopt(fd(), IPPROTO_TCP, TCP_NODELAY, (void *)&opt, sizeof(opt));
 }
 
 void TcpLink::keepalive(bool enable){
 	int opt = enable? 1 : 0;
-	::setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *)&opt, sizeof(opt));
-}
-
-void TcpLink::noblock(bool enable){
-	noblock_ = enable;
-	if(enable){
-		::fcntl(sock, F_SETFL, O_NONBLOCK | O_RDWR);
-	}else{
-		::fcntl(sock, F_SETFL, O_RDWR);
-	}
+	::setsockopt(fd(), SOL_SOCKET, SO_KEEPALIVE, (void *)&opt, sizeof(opt));
 }
 
 TcpLink* TcpLink::connect(const std::string &ip, int port){
@@ -87,7 +55,7 @@ TcpLink* TcpLink::connect(const char *ip, int port){
 
 	//log_debug("fd: %d, connect to %s:%d", sock, ip, port);
 	link = new TcpLink();
-	link->sock = sock;
+	link->_fd = sock;
 	link->keepalive(true);
 	return link;
 sock_err:
@@ -128,7 +96,7 @@ TcpLink* TcpLink::listen(const char *ip, int port){
 	//log_debug("server socket fd: %d, listen on: %s:%d", sock, ip, port);
 
 	link = new TcpLink(true);
-	link->sock = sock;
+	link->_fd = sock;
 	snprintf(link->remote_ip, sizeof(link->remote_ip), "%s", ip);
 	link->remote_port = port;
 	return link;
@@ -146,7 +114,7 @@ TcpLink* TcpLink::accept(){
 	struct sockaddr_in addr;
 	socklen_t addrlen = sizeof(addr);
 
-	while((client_sock = ::accept(sock, (struct sockaddr *)&addr, &addrlen)) == -1){
+	while((client_sock = ::accept(fd(), (struct sockaddr *)&addr, &addrlen)) == -1){
 		if(errno != EINTR){
 			//log_error("socket %d accept failed: %s", sock, strerror(errno));
 			return NULL;
@@ -160,7 +128,7 @@ TcpLink* TcpLink::accept(){
 	}
 
 	link = new TcpLink();
-	link->sock = client_sock;
+	link->_fd = client_sock;
 	link->keepalive(true);
 	inet_ntop(AF_INET, &addr.sin_addr, link->remote_ip, sizeof(link->remote_ip));
 	link->remote_port = ntohs(addr.sin_port);
@@ -174,7 +142,7 @@ int TcpLink::net_read(){
 	while(1){
 		// test
 		//want = 1;
-		int len = ::read(sock, buf, want);
+		int len = ::read(fd(), buf, want);
 		if(len == -1){
 			if(errno == EINTR){
 				continue;
@@ -193,7 +161,7 @@ int TcpLink::net_read(){
 			
 			_buffer->append(buf, len);
 		}
-		if(!noblock_){
+		if(!nonblock()){
 			break;
 		}
 	}

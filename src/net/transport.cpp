@@ -18,37 +18,35 @@ void Transport::accept(int id){
 }
 
 void Transport::close(int id){
-	this->_close_ids.push(id);
-	
 	Locking l(&_mutex);
-	if(_working_links.find(id) != _working_links.end()){
-		TcpLink *link = _working_links[id];
-		_working_links.erase(id);
-		_closing_links[id] = link;
+	if(_opening_list.find(id) != _opening_list.end()){
+		Link *link = _opening_list[id];
+		_opening_list.erase(link->id());
+		_closing_list[link->id()] = link;
+		
+		this->_close_ids.push(id);
+	}
+	if(_working_list.find(id) != _working_list.end()){
+		Link *link = _working_list[id];
+		_working_list.erase(link->id());
+		_closing_list[link->id()] = link;
+		
+		this->_close_ids.push(id);
 	}
 }
 
-void Transport::handle_new_link(TcpLink *link){
-	log_debug("new link from %s:%d, fd: %d", link->remote_ip, link->remote_port, link->fd());
-
+void Transport::handle_on_new(Link *link){
 	Locking l(&_mutex);
-	int id = link->id();
-	_working_links[id] = link;
+	_opening_list[link->id()] = link;
 
 	this->_events.push(LinkEvent::new_link(link));
 }
 
-void Transport::handle_close_link(TcpLink *link){
-	log_debug("closing link %s:%d", link->remote_ip, link->remote_port);
-
-	Locking l(&_mutex);
-	int id = link->id();
-	_working_links.erase(id);
-	_closing_links[id] = link;
-
-	this->_events.push(LinkEvent::close_link(link));
-
+void Transport::handle_on_close(Link *link){
+	this->close(link->id());
+	
 	_fdes->del(link->fd());
+	this->_events.push(LinkEvent::close_link(link));
 }
 
 void Transport::handle_accept_id(){
@@ -56,8 +54,12 @@ void Transport::handle_accept_id(){
 	_accept_ids.pop(&id);
 	
 	Locking l(&_mutex);
-	if(_working_links.find(id) != _working_links.end()){
-		TcpLink *link = _working_links[id];
+	if(_opening_list.find(id) != _opening_list.end()){
+		Link *link = _opening_list[id];
+		log_debug("accept %s:%d", link->remote_ip, link->remote_port);
+		_opening_list.erase(link->id());
+		_working_list[link->id()] = link;
+		
 		_fdes->set(link->fd(), FDEVENT_IN, 1, link);
 	}
 }
@@ -67,9 +69,10 @@ void Transport::handle_close_id(){
 	_close_ids.pop(&id);
 
 	Locking l(&_mutex);
-	if(_closing_links.find(id) != _closing_links.end()){
-		TcpLink *link = _closing_links[id];
-		_closing_links.erase(id);
+	if(_closing_list.find(id) != _closing_list.end()){
+		Link *link = _closing_list[id];
+		log_debug("close %s:%d", link->remote_ip, link->remote_port);
+		_closing_list.erase(id);
 	
 		_fdes->del(link->fd());
 		delete link;
@@ -112,17 +115,19 @@ void* Transport::run(void *arg){
 			}else if(fde->data.ptr == tcp_serv){
 				TcpLink *link = tcp_serv->accept();
 				if(link){
-					trans->handle_new_link(link);
+					log_debug("on new %s:%d", link->remote_ip, link->remote_port);
+					trans->handle_on_new(link);
 				}else{
 					log_error("accept return NULL");
 				}
 			}else{
 				TcpLink *link = (TcpLink *)fde->data.ptr;
 				if(link){ // 防止已经被 fde_del
-					log_debug("read %s:%d, fd: %d", link->remote_ip, link->remote_port, link->fd());
+					log_debug("on read %s:%d", link->remote_ip, link->remote_port);
 					int ret = link->net_read();
 					if(ret <= 0){
-						trans->handle_close_link(link);
+						log_debug("on close %s:%d", link->remote_ip, link->remote_port);
+						trans->handle_on_close(link);
 					}else{
 						//
 					}

@@ -1,39 +1,43 @@
 #include "link.h"
 #include <unistd.h>
+#include <fcntl.h>
+
+static int id_incr = 1;
 
 Link::Link(){
-	_status = 0;
+	_id = id_incr++;
 	_fd = -1;
+	_nonblock = false;
 }
 
 Link::~Link(){
+	this->close();
+}
+
+int Link::id() const{
+	return _id;
 }
 
 int Link::fd() const{
 	return _fd;
 }
-	
-bool Link::is_new() const{
-	return _status == 0;
-}
-
-bool Link::is_closed() const{
-	return _status == 1;
-}
-
-bool Link::is_working() const{
-	return _status == 2;
-}
-
-void Link::accept(){
-	_status = 2;
-}
 
 void Link::close(){
-	if(is_closed()){
-		return;
+	if(_fd >= 0){
+		::close(_fd);
+		_fd = -1;
 	}
-	_status = 1;
-	::close(_fd);
-	_fd = -1;
+}
+
+bool Link::nonblock() const{
+	return _nonblock;
+}
+
+void Link::nonblock(bool enable){
+	_nonblock = enable;
+	if(enable){
+		::fcntl(_fd, F_SETFL, O_NONBLOCK | O_RDWR);
+	}else{
+		::fcntl(_fd, F_SETFL, O_RDWR);
+	}
 }

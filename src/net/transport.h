@@ -35,13 +35,13 @@ public:
 	bool is_read() const{
 		return _status == 2;
 	}
-	static LinkEvent new_link(TcpLink *link){
+	static LinkEvent new_link(Link *link){
 		return LinkEvent(link->id(), 0);
 	}
-	static LinkEvent close_link(TcpLink *link){
+	static LinkEvent close_link(Link *link){
 		return LinkEvent(link->id(), 1);
 	}
-	static LinkEvent read_link(TcpLink *link){
+	static LinkEvent read_link(Link *link){
 		return LinkEvent(link->id(), 2);
 	}
 	
@@ -70,16 +70,17 @@ public:
 private:
 	Mutex _mutex;
 	
-	std::map<int, TcpLink*> _working_links;
-	std::map<int, TcpLink*> _closing_links;
+	std::map<int, Link*> _working_list;
+	std::map<int, Link*> _opening_list;
+	std::map<int, Link*> _closing_list;
 	
 	Queue<LinkEvent> _events;
 	
 	Channel<int> _accept_ids;
 	Channel<int> _close_ids;
 	
-	void handle_new_link(TcpLink *link);
-	void handle_close_link(TcpLink *link);
+	void handle_on_new(Link *link);
+	void handle_on_close(Link *link);
 	void handle_accept_id();
 	void handle_close_id();
 

@@ -1,29 +1,31 @@
 #ifndef SIM_LINK_H
 #define SIM_LINK_H
 
+#include <arpa/inet.h>
+
 class Link
 {
 public:
+	// TODO:
+	char remote_ip[INET_ADDRSTRLEN];
+	int remote_port;
+
 	Link();
-
-	int fd() const;
-	
-	bool is_new() const;
-	bool is_closed() const;
-	bool is_working() const;
-	
-	friend class Transport;
-	
-protected:
-	int _status;
-
-private:
 	virtual ~Link();
 
+	int id() const;
+	int fd() const;
+	void close();
+	
+	bool nonblock() const;
+	void nonblock(bool enable);
+
+protected:
+	int _id;
 	int _fd;
 	
-	void accept();
-	void close();
+private:
+	bool _nonblock;
 };
 
 #endif
