@@ -121,7 +121,7 @@ void* Transport::run(void *arg){
 			}else if(fde->data.ptr == tcp_serv){
 				Link *link = tcp_serv->accept();
 				if(link){
-					Session *sess = new Session(link);
+					Session *sess = new Session(link, new LineParser());
 					trans->handle_on_new(sess);
 				}else{
 					log_error("accept return NULL");
@@ -135,13 +135,13 @@ void* Transport::run(void *arg){
 					if(ret <= 0){
 						trans->handle_on_close(sess);
 					}else{
-						// LineParser parser;
-						// Buffer *buffer = link->buffer();
-						// Message *msg;
-						// ParseStatus s = parser.parse(buffer, &msg);
-						// if(s.ok()){
-						// 	log_debug("recv: %s", ((LineMessage *)msg)->text().c_str());
-						// }
+						ParseState s = sess->parse();
+						if(s.ready()){
+							trans->_events.push(Event::read_event(sess));
+						}else if(s.error()){
+							log_debug("parse error!");
+							trans->handle_on_close(sess);
+						}
 					}
 				}
 			}

@@ -4,6 +4,8 @@
 #include <arpa/inet.h>
 #include <string>
 
+class Buffer;
+
 class Link
 {
 public:
@@ -11,6 +13,7 @@ public:
 	virtual ~Link();
 
 	int fd() const;
+	Buffer* buffer() const;
 	std::string address() const;
 	
 	bool nonblock() const;
@@ -21,6 +24,7 @@ public:
 
 protected:
 	int _fd;
+	Buffer* _buffer;
 	std::string _address;
 	
 private:

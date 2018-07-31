@@ -3,21 +3,16 @@
 #include <string.h>
 #include <stdarg.h>
 #include <sys/socket.h>
-#include "util/log.h"
 #include "tcp_link.h"
+#include "util/log.h"
+#include "util/buffer.h"
 
 // namespace sim{
 
 TcpLink::TcpLink(bool is_server){
-	_buffer = new Buffer();
 }
 
 TcpLink::~TcpLink(){
-	delete _buffer;
-}
-
-Buffer* TcpLink::buffer() const{
-	return _buffer;
 }
 
 void TcpLink::nodelay(bool enable){

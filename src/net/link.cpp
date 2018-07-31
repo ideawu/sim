@@ -1,18 +1,25 @@
 #include "link.h"
 #include <unistd.h>
 #include <fcntl.h>
+#include "util/buffer.h"
 
 Link::Link(){
 	_fd = -1;
 	_nonblock = false;
+	_buffer = new Buffer();
 }
 
 Link::~Link(){
 	this->close();
+	delete _buffer;
 }
 
 int Link::fd() const{
 	return _fd;
+}
+
+Buffer* Link::buffer() const{
+	return _buffer;
 }
 
 std::string Link::address() const{

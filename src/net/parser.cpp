@@ -1,34 +1,37 @@
 #include "parser.h"
 
-ParseStatus::ParseStatus(){
-	_code = 0;
+ParseState ParseState::none_state(){
+	return ParseState(0);
 }
 
-ParseStatus::~ParseStatus(){
+ParseState ParseState::ready_state(){
+	return ParseState(1);
 }
 
-bool ParseStatus::ok() const{
-	return _code == 1;
+ParseState ParseState::error_state(){
+	return ParseState(-1);
 }
 
-bool ParseStatus::none() const{
+// ParseState::ParseState(){
+// 	_code = 0;
+// }
+
+ParseState::ParseState(int code){
+	_code = code;
+}
+
+ParseState::~ParseState(){
+}
+
+bool ParseState::none() const{
 	return _code == 0;
 }
 
-bool ParseStatus::error() const{
+bool ParseState::ready() const{
+	return _code == 1;
+}
+
+bool ParseState::error() const{
 	return _code == -1;
-}
-
-
-void ParseStatus::set_ok(){
-	_code = 1;
-}
-
-void ParseStatus::set_none(){
-	_code = 0;
-}
-
-void ParseStatus::set_error(){
-	_code = -1;
 }
 

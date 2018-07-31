@@ -1,34 +1,37 @@
 #ifndef SIM_PARSER_H
 #define SIM_PARSER_H
 
-#include "util/buffer.h"
 #include "message.h"
 
-class ParseStatus;
+class Buffer;
+class ParseState;
 
 class Parser
 {
 public:
-	virtual ParseStatus parse(Buffer *buffer, Message **msg) = 0;
+	virtual ~Parser(){};
+	virtual ParseState parse(Buffer *buffer, Message **msg) = 0;
 };
 
 /////////////////////////////////////////
 
-class ParseStatus
+class ParseState
 {
 public:
-	ParseStatus();
-	~ParseStatus();
+	static ParseState none_state();
+	static ParseState ready_state();
+	static ParseState error_state();
 	
-	bool ok() const;
+	// ParseState();
+	~ParseState();
+	
 	bool none() const;
+	bool ready() const;
 	bool error() const;
 	
-	void set_ok();
-	void set_none();
-	void set_error();
-	
 private:
+	ParseState(int code);
+
 	int _code;
 };
 
