@@ -52,11 +52,13 @@ int main(int argc, char **argv){
 			// log_debug("read");
 			LineMessage *msg = (LineMessage *)trans->recv(event.id());
 			if(!msg){
+				// do nothing, the close event will finally be triggered
 				log_debug("recv NULL msg, detect session closed");
 			}else{
 				log_debug("recv: %s", msg->text().c_str());
 				delete msg;
 			}
+			usleep(100 * 1000);
 		}
 	}
 	
