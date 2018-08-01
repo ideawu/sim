@@ -23,6 +23,8 @@ void signal_handler(int sig){
 }
 
 int main(int argc, char **argv){
+	// set_log_level("error");
+	
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGINT, signal_handler);
 	signal(SIGTERM, signal_handler);

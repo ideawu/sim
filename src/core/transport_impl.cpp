@@ -74,39 +74,6 @@ Message* TransportImpl::recv(int id){
 	return NULL;
 }
 
-void TransportImpl::send(int id, Message *msg){
-	Locking l(&_mutex);
-	if(_working_list.find(id) != _working_list.end()){
-		Session *sess = _working_list[id];
-		sess->send(msg);
-
-		// log_debug("output.size %d", sess->output()->size());
-		this->_send_ids.push(id);
-	}
-}
-
-void TransportImpl::handle_on_new(Session *sess){
-	log_debug("on new %s", sess->link()->address().c_str());
-
-	Locking l(&_mutex);
-	_opening_list[sess->id()] = sess;
-
-	this->_events.push(Event::new_event(sess));
-}
-
-void TransportImpl::handle_on_close(Session *sess){
-	int id = sess->id();
-	log_debug("on close %s", sess->link()->address().c_str());
-	Locking l(&_mutex);
-	if(_working_list.find(id) != _working_list.end()){
-		_working_list.erase(sess->id());
-		_closing_list[sess->id()] = sess;
-	
-		_fdes->del(sess->link()->fd());
-		this->_events.push(Event::close_event(sess));
-	}
-}
-
 void TransportImpl::handle_on_read(Session *sess){
 	// log_debug("net read %s", sess->link()->address().c_str());
 	
@@ -130,6 +97,32 @@ void TransportImpl::handle_on_read(Session *sess){
 
 	if(error){
 		this->handle_on_close(sess);
+	}
+}
+
+void TransportImpl::send(int id, Message *msg){
+	Locking l(&_mutex);
+	if(_working_list.find(id) != _working_list.end()){
+		Session *sess = _working_list[id];
+		sess->send(msg);
+
+		// log_debug("output.size %d", sess->output()->size());
+		this->_send_ids.push(id);
+	}
+}
+
+void TransportImpl::handle_send_id(){
+	Locking l(&_mutex);
+
+	int id;
+	_send_ids.pop(&id);
+
+	if(_working_list.find(id) != _working_list.end()){
+		Session *sess = _working_list[id];
+		if(!sess->output()->empty() && !_fdes->isset(sess->link()->fd(), FDEVENT_OUT)){
+			log_debug("fde.set(%d, OUT)", sess->id());
+			_fdes->set(sess->link()->fd(), FDEVENT_OUT, FDE_NUM_CLIENT, sess);
+		}
 	}
 }
 
@@ -162,6 +155,28 @@ void TransportImpl::handle_on_write(Session *sess){
 	}
 }
 
+void TransportImpl::handle_on_new(Session *sess){
+	log_debug("on new %s", sess->link()->address().c_str());
+
+	Locking l(&_mutex);
+	_opening_list[sess->id()] = sess;
+
+	this->_events.push(Event::new_event(sess));
+}
+
+void TransportImpl::handle_on_close(Session *sess){
+	int id = sess->id();
+	log_debug("on close %s", sess->link()->address().c_str());
+	Locking l(&_mutex);
+	if(_working_list.find(id) != _working_list.end()){
+		_working_list.erase(sess->id());
+		_closing_list[sess->id()] = sess;
+	
+		_fdes->del(sess->link()->fd());
+		this->_events.push(Event::close_event(sess));
+	}
+}
+
 void TransportImpl::handle_accept_id(){
 	int id;
 	_accept_ids.pop(&id);
@@ -189,20 +204,6 @@ void TransportImpl::handle_close_id(){
 	
 		_fdes->del(sess->link()->fd());
 		delete sess;
-	}
-}
-
-void TransportImpl::handle_send_id(){
-	int id;
-	_send_ids.pop(&id);
-
-	Locking l(&_mutex);
-	if(_working_list.find(id) != _working_list.end()){
-		Session *sess = _working_list[id];
-		if(!sess->output()->empty() && !_fdes->isset(sess->link()->fd(), FDEVENT_OUT)){
-			log_debug("fde.set(%d, OUT)", sess->id());
-			_fdes->set(sess->link()->fd(), FDEVENT_OUT, FDE_NUM_CLIENT, sess);
-		}
 	}
 }
 
