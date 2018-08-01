@@ -7,7 +7,7 @@ class Message
 {
 public:
 	virtual ~Message(){}
-	virtual Buffer* encode() = 0;
+	virtual int encode(Buffer *buffer) = 0;
 };
 
 #endif

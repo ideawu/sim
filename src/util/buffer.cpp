@@ -12,6 +12,10 @@ Buffer::~Buffer(){
 	free(_buf);
 }
 
+bool Buffer::empty() const{
+	return _size == 0;
+}
+
 int Buffer::size() const{
 	return _size;
 }

@@ -8,9 +8,8 @@ void LineMessage::text(const std::string &s){
 	_text = s;
 }
 
-Buffer* LineMessage::encode(){
-	Buffer *buf = new Buffer();
-	buf->append(_text.data(), _text.size());
-	buf->append("\n", 1);
-	return buf;
+int LineMessage::encode(Buffer *buffer){
+	buffer->append(_text.data(), _text.size());
+	buffer->append("\n", 1);
+	return _text.size() + 1;
 }

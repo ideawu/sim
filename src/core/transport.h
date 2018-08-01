@@ -21,7 +21,7 @@ public:
 	virtual void close(int id) = 0;
 	
 	virtual Message* recv(int id) = 0;
-	// void send(int id, Message *msg);
+	virtual void send(int id, Message *msg) = 0;
 	
 protected:
 	Transport(){}

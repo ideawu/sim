@@ -30,6 +30,7 @@ void TransportImpl::add_server(Server *serv){
 void TransportImpl::setup(){
 	_fdes->set(_accept_ids.fd(), FDEVENT_IN, FDE_NUM_COMMON, &_accept_ids);
 	_fdes->set(_close_ids.fd(), FDEVENT_IN, FDE_NUM_COMMON, &_close_ids);
+	_fdes->set(_send_ids.fd(), FDEVENT_IN, FDE_NUM_COMMON, &_send_ids);
 
 	pthread_t tid;
 	int err = pthread_create(&tid, NULL, &TransportImpl::run, this);
@@ -73,6 +74,17 @@ Message* TransportImpl::recv(int id){
 	return NULL;
 }
 
+void TransportImpl::send(int id, Message *msg){
+	Locking l(&_mutex);
+	if(_working_list.find(id) != _working_list.end()){
+		Session *sess = _working_list[id];
+		sess->send(msg);
+
+		// log_debug("output.size %d", sess->output()->size());
+		this->_send_ids.push(id);
+	}
+}
+
 void TransportImpl::handle_on_new(Session *sess){
 	log_debug("on new %s", sess->link()->address().c_str());
 
@@ -104,15 +116,45 @@ void TransportImpl::handle_on_read(Session *sess){
 		error = true;
 	}else{
 		Locking l(&_mutex);
-		int num = sess->parse();
+		int num = sess->parse_input();
 		if(num == -1){
 			log_debug("parse error!");
 			error = true;
 		}else{
+			log_debug("parsed %d message(s)", num);
 			for(int i=0; i<num; i++){
 				this->_events.push(Event::read_event(sess));
 			}
 		}
+	}
+
+	if(error){
+		this->handle_on_close(sess);
+	}
+}
+
+void TransportImpl::handle_on_write(Session *sess){
+	bool error = false;
+
+	{
+		Locking l(&_mutex);
+		if(!sess->output()->empty()){
+			int num = sess->encode_output();
+			if(num == -1){
+				log_debug("encode error!");
+				error = true;
+			}else{
+				log_debug("encoded %d message(s)", num);
+			}
+		}
+	}
+	
+	int ret = sess->link()->net_write();
+	if(ret == 0){
+		log_debug("fde.clr(%d, OUT)", sess->id());
+		_fdes->clr(sess->link()->fd(), FDEVENT_OUT);
+	}else if(ret == -1){
+		error = true;
 	}
 
 	if(error){
@@ -150,6 +192,20 @@ void TransportImpl::handle_close_id(){
 	}
 }
 
+void TransportImpl::handle_send_id(){
+	int id;
+	_send_ids.pop(&id);
+
+	Locking l(&_mutex);
+	if(_working_list.find(id) != _working_list.end()){
+		Session *sess = _working_list[id];
+		if(!sess->output()->empty() && !_fdes->isset(sess->link()->fd(), FDEVENT_OUT)){
+			log_debug("fde.set(%d, OUT)", sess->id());
+			_fdes->set(sess->link()->fd(), FDEVENT_OUT, FDE_NUM_CLIENT, sess);
+		}
+	}
+}
+
 void* TransportImpl::run(void *arg){
 	TransportImpl *trans = (TransportImpl *)arg;
 	const Fdevents::events_t *events;
@@ -163,6 +219,8 @@ void* TransportImpl::run(void *arg){
 				trans->handle_accept_id();
 			}else if(fde->data.ptr == &trans->_close_ids){
 				trans->handle_close_id();
+			}else if(fde->data.ptr == &trans->_send_ids){
+				trans->handle_send_id();
 			}else{
 				if(fde->data.num == FDE_NUM_SERVER){
 					Server *serv = (Server *)fde->data.ptr;
@@ -175,7 +233,11 @@ void* TransportImpl::run(void *arg){
 				}else{
 					Session *sess = (Session *)fde->data.ptr;
 					if(sess){ // 防止已经被 fde_del
-						trans->handle_on_read(sess);
+						if(fde->events & FDEVENT_IN){
+							trans->handle_on_read(sess);
+						}else if(fde->events & FDEVENT_OUT){
+							trans->handle_on_write(sess);
+						}
 					}
 				}
 			}

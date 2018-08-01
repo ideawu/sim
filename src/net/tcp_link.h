@@ -19,7 +19,7 @@ public:
 
 	virtual Link* accept();
 	virtual int net_read();
-	// int net_write();
+	virtual int net_write();
 
 	static TcpLink* connect(const char *ip, int port);
 	static TcpLink* connect(const std::string &ip, int port);

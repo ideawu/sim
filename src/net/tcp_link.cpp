@@ -158,13 +158,45 @@ int TcpLink::net_read(){
 			}
 			ret += len;
 			
-			_buffer->append(buf, len);
+			_input->append(buf, len);
 		}
 		if(!nonblock()){
 			break;
 		}
 	}
 	//log_debug("read %d", ret);
+	return ret;
+}
+
+int TcpLink::net_write(){
+	int ret = 0;
+	int want;
+	while((want = _output->size()) > 0){
+		// test
+		// want = 1;
+		int len = ::write(fd(), _output->data(), want);
+		if(len == -1){
+			if(errno == EINTR){
+				continue;
+			}else if(errno == EWOULDBLOCK){
+				break;
+			}else{
+				//log_debug("fd: %d, write: -1, error: %s", sock, strerror(errno));
+				return -1;
+			}
+		}else{
+			//log_debug("fd: %d, want: %d, write: %d", sock, want, len);
+			if(len == 0){
+				// ?
+				break;
+			}
+			ret += len;
+			_output->remove(len);
+		}
+		if(!nonblock()){
+			break;
+		}
+	}
 	return ret;
 }
 

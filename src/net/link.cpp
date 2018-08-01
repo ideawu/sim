@@ -6,20 +6,26 @@
 Link::Link(){
 	_fd = -1;
 	_nonblock = false;
-	_buffer = new Buffer();
+	_input = new Buffer();
+	_output = new Buffer();
 }
 
 Link::~Link(){
 	this->close();
-	delete _buffer;
+	delete _input;
+	delete _output;
 }
 
 int Link::fd() const{
 	return _fd;
 }
 
-Buffer* Link::buffer() const{
-	return _buffer;
+Buffer* Link::input() const{
+	return _input;
+}
+
+Buffer* Link::output() const{
+	return _output;
 }
 
 std::string Link::address() const{

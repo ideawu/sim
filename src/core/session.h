@@ -17,10 +17,16 @@ public:
 	Link* link() const;
 	Parser* parser() const;
 	
-	// 返回解析成功的报文数量，出错返回-1
-	virtual int parse();
+	const std::list<Message *>* input() const;
+	const std::list<Message *>* output() const;
+	
+	// 返回解析成功的要接收的报文的数量，出错返回-1
+	virtual int parse_input();
+	// 返回编码成功的要发送的报文的数量，出错返回-1
+	virtual int encode_output();
 
 	Message* recv();
+	void send(Message *msg);
 	
 private:
 	int _id;

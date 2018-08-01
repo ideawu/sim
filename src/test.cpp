@@ -63,13 +63,20 @@ int main(int argc, char **argv){
 			trans->close(event.id());
 		}else if(event.is_read()){
 			// log_debug("read");
-			LineMessage *msg = (LineMessage *)trans->recv(event.id());
-			if(!msg){
+			LineMessage *req = (LineMessage *)trans->recv(event.id());
+			if(!req){
 				// do nothing, the close event will finally be triggered
 				log_debug("recv NULL msg, detect session closed");
 			}else{
-				log_debug("recv: %s", msg->text().c_str());
-				delete msg;
+				log_debug("recv: %s", req->text().c_str());
+				
+				std::string text = "req=";
+				text.append(req->text());
+				LineMessage *resp = new LineMessage();
+				resp->text(text);
+				trans->send(event.id(), resp);
+				
+				delete req;
 			}
 		}
 	}

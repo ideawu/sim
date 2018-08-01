@@ -7,6 +7,7 @@ public:
 	Buffer();
 	~Buffer();
 	
+	bool empty() const;
 	int size() const;
 	char* data();
 	

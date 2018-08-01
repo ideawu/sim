@@ -37,11 +37,19 @@ Parser* Session::parser() const{
 	return _parser;
 }
 
-int Session::parse(){
+const std::list<Message *>* Session::input() const{
+	return &_input;
+}
+
+const std::list<Message *>* Session::output() const{
+	return &_output;
+}
+
+int Session::parse_input(){
 	int ret = 0;
 	while(1){
 		Message *msg;
-		ParseState s = _parser->parse(_link->buffer(), &msg);
+		ParseState s = _parser->parse(_link->input(), &msg);
 		if(s.ready()){
 			_input.push_back(msg);
 			ret ++;
@@ -51,7 +59,18 @@ int Session::parse(){
 			break;
 		}
 	}
-	log_debug("received %d message(s)", ret);
+	return ret;
+}
+
+int Session::encode_output(){
+	int ret = 0;
+	while(!_output.empty()){
+		Message *msg = _output.front();
+		_output.pop_front();
+		msg->encode(_link->output());
+		delete msg;
+		ret ++;
+	}
 	return ret;
 }
 
@@ -62,4 +81,8 @@ Message* Session::recv(){
 	Message *msg = _input.front();
 	_input.pop_front();
 	return msg;
+}
+
+void Session::send(Message *msg){
+	_output.push_back(msg);
 }

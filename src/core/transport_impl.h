@@ -29,7 +29,7 @@ public:
 	virtual void close(int id);
 	
 	virtual Message* recv(int id);
-	// void send(int id, Message *msg);
+	virtual void send(int id, Message *msg);
 	
 private:
 	Mutex _mutex;
@@ -42,12 +42,15 @@ private:
 	
 	Channel<int> _accept_ids;
 	Channel<int> _close_ids;
+	Channel<int> _send_ids;
 	
 	void handle_on_new(Session *sess);
 	void handle_on_close(Session *sess);
 	void handle_on_read(Session *sess);
+	void handle_on_write(Session *sess);
 	void handle_accept_id();
 	void handle_close_id();
+	void handle_send_id();
 
 	Fdevents *_fdes;
 	

@@ -13,19 +13,22 @@ public:
 	virtual ~Link();
 
 	int fd() const;
-	Buffer* buffer() const;
+	Buffer* input() const;
+	Buffer* output() const;
 	std::string address() const;
 	
 	bool nonblock() const;
 	void nonblock(bool enable);
 
 	void close();
-	virtual int net_read() = 0;
 	virtual Link* accept() = 0;
+	virtual int net_read() = 0;
+	virtual int net_write() = 0;
 
 protected:
 	int _fd;
-	Buffer* _buffer;
+	Buffer* _input;
+	Buffer* _output;
 	std::string _address;
 	
 private:

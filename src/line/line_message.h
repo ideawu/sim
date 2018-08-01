@@ -11,7 +11,7 @@ public:
 	std::string text() const;
 	void text(const std::string &s);
 	
-	virtual Buffer* encode();
+	virtual int encode(Buffer *buffer);
 	
 private:
 	std::string _text;
