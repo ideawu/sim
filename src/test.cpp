@@ -1,6 +1,7 @@
 #include "util/log.h"
 #include "core/event.h"
 #include "core/transport.h"
+#include "core/worker.h"
 #include "line/line_message.h"
 #include "line/line_server.h"
 
@@ -21,6 +22,32 @@ void signal_handler(int sig){
 		}
 	}
 }
+
+class TestWorker : public Worker<Event>
+{
+public:
+	Transport *trans;
+	
+	virtual void process(Event event){
+		// log_debug("read");
+		LineMessage *req = (LineMessage *)trans->recv(event.id());
+		if(!req){
+			// do nothing, the close event will finally be triggered
+			log_debug("recv NULL msg, detect session closed");
+			return;
+		}
+
+		log_debug("recv: %s", req->text().c_str());
+	
+		std::string text = "req=";
+		text.append(req->text());
+		LineMessage *resp = new LineMessage();
+		resp->text(text);
+		trans->send(event.id(), resp);
+	
+		delete req;
+	}
+};
 
 int main(int argc, char **argv){
 	// set_log_level("error");
@@ -54,6 +81,10 @@ int main(int argc, char **argv){
 	trans->add_server(serv);
 	trans->init();
 	log_debug("transport setup");
+	
+	TestWorker worker;
+	worker.trans = trans;
+	worker.start(10);
 
 	while(!quit){
 		const std::vector<Event> *events = trans->wait(200);
@@ -67,25 +98,12 @@ int main(int argc, char **argv){
 				log_debug("close");
 				trans->close(event.id());
 			}else if(event.is_read()){
-				// log_debug("read");
-				LineMessage *req = (LineMessage *)trans->recv(event.id());
-				if(!req){
-					// do nothing, the close event will finally be triggered
-					log_debug("recv NULL msg, detect session closed");
-				}else{
-					log_debug("recv: %s", req->text().c_str());
-				
-					std::string text = "req=";
-					text.append(req->text());
-					LineMessage *resp = new LineMessage();
-					resp->text(text);
-					trans->send(event.id(), resp);
-				
-					delete req;
-				}
+				worker.add_task(event);
 			}
 		}
 	}
+	
+	worker.stop();
 	
 	return 0;
 }

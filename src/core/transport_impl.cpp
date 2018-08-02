@@ -32,11 +32,6 @@ void TransportImpl::init(){
 	_fdes->set(_close_ids.fd(), FDEVENT_IN, FDE_NUM_COMMON, &_close_ids);
 	_fdes->set(_send_ids.fd(), FDEVENT_IN, FDE_NUM_COMMON, &_send_ids);
 
-	// pthread_t tid;
-	// int err = pthread_create(&tid, NULL, &TransportImpl::run, this);
-	// if(err != 0){
-	// 	log_error("can't create thread: %s", strerror(err));
-	// }
 }
 
 void TransportImpl::accept(int id){
@@ -82,7 +77,7 @@ void TransportImpl::handle_on_read(Session *sess){
 			log_debug("parse error!");
 			error = true;
 		}else{
-			log_debug("parsed %d message(s)", num);
+			// log_debug("parsed %d message(s)", num);
 			for(int i=0; i<num; i++){
 				this->_events.push_back(Event::read_event(sess));
 			}
@@ -114,7 +109,7 @@ void TransportImpl::handle_send_id(){
 	if(_working_list.find(id) != _working_list.end()){
 		Session *sess = _working_list[id];
 		if(!sess->output()->empty() && !_fdes->isset(sess->link()->fd(), FDEVENT_OUT)){
-			log_debug("fde.set(%d, OUT)", sess->id());
+			// log_debug("fde.set(%d, OUT)", sess->id());
 			_fdes->set(sess->link()->fd(), FDEVENT_OUT, FDE_NUM_CLIENT, sess);
 		}
 	}
@@ -131,14 +126,14 @@ void TransportImpl::handle_on_write(Session *sess){
 				log_debug("encode error!");
 				error = true;
 			}else{
-				log_debug("encoded %d message(s)", num);
+				// log_debug("encoded %d message(s)", num);
 			}
 		}
 	}
 	
 	int ret = sess->link()->net_write();
 	if(ret == 0){
-		log_debug("fde.clr(%d, OUT)", sess->id());
+		// log_debug("fde.clr(%d, OUT)", sess->id());
 		_fdes->clr(sess->link()->fd(), FDEVENT_OUT);
 	}else if(ret == -1){
 		error = true;
