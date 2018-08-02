@@ -21,13 +21,12 @@ public:
 	~TransportImpl();
 	
 	virtual void add_server(Server *serv);
-	virtual void setup();
+	virtual void init();
 	
-	virtual Event wait(int timeout_ms);
+	virtual const std::vector<Event>* wait(int timeout_ms);
 	
 	virtual void accept(int id);
 	virtual void close(int id);
-	
 	virtual Message* recv(int id);
 	virtual void send(int id, Message *msg);
 	
@@ -38,7 +37,7 @@ private:
 	std::map<int, Session*> _opening_list;
 	std::map<int, Session*> _closing_list;
 	
-	Queue<Event> _events;
+	std::vector<Event> _events;
 	
 	Channel<int> _accept_ids;
 	Channel<int> _close_ids;
@@ -55,8 +54,6 @@ private:
 	Fdevents *_fdes;
 	
 	std::vector<Server*> _servers;
-	
-	static void* run(void *arg);
 };
 
 #endif

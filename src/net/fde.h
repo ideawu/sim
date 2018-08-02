@@ -57,7 +57,7 @@ struct Fdevent{
 
 class Fdevents{
 	public:
-		typedef std::vector<struct Fdevent *> events_t;
+		typedef std::vector<Fdevent *> events_t;
 	private:
 #ifdef HAVE_EPOLL
 		static const int MAX_FDS = 8 * 1024;

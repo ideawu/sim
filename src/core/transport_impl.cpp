@@ -27,22 +27,16 @@ void TransportImpl::add_server(Server *serv){
 	_fdes->set(serv->link()->fd(), FDEVENT_IN, FDE_NUM_SERVER, serv);
 }
 
-void TransportImpl::setup(){
+void TransportImpl::init(){
 	_fdes->set(_accept_ids.fd(), FDEVENT_IN, FDE_NUM_COMMON, &_accept_ids);
 	_fdes->set(_close_ids.fd(), FDEVENT_IN, FDE_NUM_COMMON, &_close_ids);
 	_fdes->set(_send_ids.fd(), FDEVENT_IN, FDE_NUM_COMMON, &_send_ids);
 
-	pthread_t tid;
-	int err = pthread_create(&tid, NULL, &TransportImpl::run, this);
-	if(err != 0){
-		log_error("can't create thread: %s", strerror(err));
-	}
-}
-
-Event TransportImpl::wait(int timeout_ms){
-	Event event;
-	_events.pop(&event, timeout_ms);
-	return event;
+	// pthread_t tid;
+	// int err = pthread_create(&tid, NULL, &TransportImpl::run, this);
+	// if(err != 0){
+	// 	log_error("can't create thread: %s", strerror(err));
+	// }
 }
 
 void TransportImpl::accept(int id){
@@ -90,7 +84,7 @@ void TransportImpl::handle_on_read(Session *sess){
 		}else{
 			log_debug("parsed %d message(s)", num);
 			for(int i=0; i<num; i++){
-				this->_events.push(Event::read_event(sess));
+				this->_events.push_back(Event::read_event(sess));
 			}
 		}
 	}
@@ -161,7 +155,7 @@ void TransportImpl::handle_on_new(Session *sess){
 	Locking l(&_mutex);
 	_opening_list[sess->id()] = sess;
 
-	this->_events.push(Event::new_event(sess));
+	this->_events.push_back(Event::new_event(sess));
 }
 
 void TransportImpl::handle_on_close(Session *sess){
@@ -173,7 +167,7 @@ void TransportImpl::handle_on_close(Session *sess){
 		_closing_list[sess->id()] = sess;
 	
 		_fdes->del(sess->link()->fd());
-		this->_events.push(Event::close_event(sess));
+		this->_events.push_back(Event::close_event(sess));
 	}
 }
 
@@ -207,42 +201,40 @@ void TransportImpl::handle_close_id(){
 	}
 }
 
-void* TransportImpl::run(void *arg){
-	TransportImpl *trans = (TransportImpl *)arg;
-	const Fdevents::events_t *events;
-	
-	while(1){
-		events = trans->_fdes->wait(500);
-		
-		for(int i=0; i<(int)events->size(); i++){
-			const Fdevent *fde = events->at(i);
-			if(fde->data.ptr == &trans->_accept_ids){
-				trans->handle_accept_id();
-			}else if(fde->data.ptr == &trans->_close_ids){
-				trans->handle_close_id();
-			}else if(fde->data.ptr == &trans->_send_ids){
-				trans->handle_send_id();
-			}else{
-				if(fde->data.num == FDE_NUM_SERVER){
-					Server *serv = (Server *)fde->data.ptr;
-					Session *sess = serv->accept();
-					if(sess){
-						trans->handle_on_new(sess);
-					}else{
-						log_error("accept return NULL");
-					}
+const std::vector<Event>* TransportImpl::wait(int timeout_ms){
+	_events.clear();
+
+	const Fdevents::events_t *events = _fdes->wait(timeout_ms);
+	for(int i=0; i<(int)events->size(); i++){
+		const Fdevent *fde = events->at(i);
+		if(fde->data.ptr == &this->_accept_ids){
+			this->handle_accept_id();
+		}else if(fde->data.ptr == &this->_close_ids){
+			this->handle_close_id();
+		}else if(fde->data.ptr == &this->_send_ids){
+			this->handle_send_id();
+		}else{
+			if(fde->data.num == FDE_NUM_SERVER){
+				Server *serv = (Server *)fde->data.ptr;
+				Session *sess = serv->accept();
+				if(sess){
+					this->handle_on_new(sess);
 				}else{
-					Session *sess = (Session *)fde->data.ptr;
-					if(sess){ // 防止已经被 fde_del
-						if(fde->events & FDEVENT_IN){
-							trans->handle_on_read(sess);
-						}else if(fde->events & FDEVENT_OUT){
-							trans->handle_on_write(sess);
-						}
+					log_error("accept return NULL");
+				}
+			}else{
+				Session *sess = (Session *)fde->data.ptr;
+				if(sess){ // 防止已经被 fde_del
+					if(fde->events & FDEVENT_IN){
+						this->handle_on_read(sess);
+					}
+					if(fde->events & FDEVENT_OUT){
+						this->handle_on_write(sess);
 					}
 				}
 			}
 		}
 	}
-	return NULL;
+	
+	return &_events;
 }

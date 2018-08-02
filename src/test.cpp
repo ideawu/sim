@@ -52,33 +52,37 @@ int main(int argc, char **argv){
 	
 	Transport *trans = Transport::create();
 	trans->add_server(serv);
-	trans->setup();
+	trans->init();
 	log_debug("transport setup");
 
 	while(!quit){
-		Event event = trans->wait(200);
-		if(event.is_new()){
-			log_debug("accept");
-			trans->accept(event.id());
-		}else if(event.is_close()){
-			log_debug("close");
-			trans->close(event.id());
-		}else if(event.is_read()){
-			// log_debug("read");
-			LineMessage *req = (LineMessage *)trans->recv(event.id());
-			if(!req){
-				// do nothing, the close event will finally be triggered
-				log_debug("recv NULL msg, detect session closed");
-			}else{
-				log_debug("recv: %s", req->text().c_str());
+		const std::vector<Event> *events = trans->wait(200);
+		for(int i=0; i<(int)events->size(); i++){
+			Event event = events->at(i);
+		
+			if(event.is_new()){
+				log_debug("accept");
+				trans->accept(event.id());
+			}else if(event.is_close()){
+				log_debug("close");
+				trans->close(event.id());
+			}else if(event.is_read()){
+				// log_debug("read");
+				LineMessage *req = (LineMessage *)trans->recv(event.id());
+				if(!req){
+					// do nothing, the close event will finally be triggered
+					log_debug("recv NULL msg, detect session closed");
+				}else{
+					log_debug("recv: %s", req->text().c_str());
 				
-				std::string text = "req=";
-				text.append(req->text());
-				LineMessage *resp = new LineMessage();
-				resp->text(text);
-				trans->send(event.id(), resp);
+					std::string text = "req=";
+					text.append(req->text());
+					LineMessage *resp = new LineMessage();
+					resp->text(text);
+					trans->send(event.id(), resp);
 				
-				delete req;
+					delete req;
+				}
 			}
 		}
 	}
