@@ -2,7 +2,7 @@
 
 C++ network server framework, `nc` and `telnet` friendly.
 
-#demo
+# demo
 
 	#include "sim/sim.h"
 	
